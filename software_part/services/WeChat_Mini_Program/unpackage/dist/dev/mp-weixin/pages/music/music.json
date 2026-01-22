@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "音乐管理",
+  "usingComponents": {
+    "u-search": "../../uni_modules/uview-plus/components/u-search/u-search",
+    "u-button": "../../uni_modules/uview-plus/components/u-button/u-button",
+    "u-input": "../../uni_modules/uview-plus/components/u-input/u-input",
+    "u-form-item": "../../uni_modules/uview-plus/components/u-form-item/u-form-item",
+    "u-form": "../../uni_modules/uview-plus/components/u-form/u-form",
+    "u-modal": "../../uni_modules/uview-plus/components/u-modal/u-modal",
+    "empty-state": "../../components/EmptyState/EmptyState"
+  }
+}

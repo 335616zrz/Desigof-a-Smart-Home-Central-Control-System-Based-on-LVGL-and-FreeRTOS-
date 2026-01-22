@@ -1,0 +1,103 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view class="title">图表测试页</view>
+			<view class="desc">用于验证 mrsong-charts 折线图渲染能力。</view>
+		</view>
+
+		<view class="card">
+			<view class="subtitle">mrsong-charts 折线图</view>
+			<mrsong-charts
+				type="line"
+				title=""
+				:chartsData="lineChartData"
+				:config="lineConfig"
+			/>
+		</view>
+
+		<view class="card">
+			<view class="subtitle">TelemetryLineChart 组件</view>
+		</view>
+		<TelemetryLineChart
+			title="温度趋势"
+			:data="mockData"
+			field="temperature"
+			canvasId="testTempChart"
+		/>
+
+		<view class="spacer"></view>
+
+		<TelemetryLineChart
+			title="湿度趋势"
+			:data="mockData"
+			field="humidity"
+			canvasId="testHumidityChart"
+		/>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import TelemetryLineChart from '../../components/TelemetryLineChart/TelemetryLineChart.uvue'
+
+	const now = Date.now()
+	const mockData = ref([
+		{ temperature: 22, humidity: 55, timestamp: now - 10 * 60 * 1000 },
+		{ temperature: 23, humidity: 58, timestamp: now - 8 * 60 * 1000 },
+		{ temperature: 23.5, humidity: 56, timestamp: now - 6 * 60 * 1000 },
+		{ temperature: 24, humidity: 60, timestamp: now - 4 * 60 * 1000 },
+		{ temperature: 23.8, humidity: 62, timestamp: now - 2 * 60 * 1000 },
+		{ temperature: 24.2, humidity: 59, timestamp: now },
+	])
+
+	const lineChartData = ref({
+		categories: ['10:00', '10:02', '10:04', '10:06', '10:08', '10:10'],
+		series: [{
+			name: '温度',
+			data: [22, 23, 23.5, 24, 23.8, 24.2],
+		}],
+	})
+
+	const lineConfig = {
+		itemCount: 6,
+		scrollShow: false,
+		rotateLabel: false,
+		enableScroll: false,
+		color: ['#0aa8ff'],
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: var(--w-bg);
+	}
+
+	.card {
+		background: var(--w-card-bg);
+		border-radius: 12px;
+		padding: 14px;
+		margin-bottom: 12px;
+	}
+
+	.title {
+		font-size: 18px;
+		font-weight: 600;
+	}
+
+	.subtitle {
+		font-size: 14px;
+		font-weight: 600;
+		margin-bottom: 10px;
+	}
+
+	.desc {
+		margin-top: 6px;
+		color: var(--w-text-secondary);
+		font-size: 12px;
+	}
+
+	.spacer {
+		height: 12px;
+	}
+</style>

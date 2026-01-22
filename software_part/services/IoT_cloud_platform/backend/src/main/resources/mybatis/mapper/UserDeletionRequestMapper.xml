@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.UserDeletionRequestMapper">
+
+    <resultMap id="UserDeletionRequestResultMap" type="iot.domain.UserDeletionRequest">
+        <id property="id" column="id" />
+        <result property="targetUserId" column="target_user_id" />
+        <result property="requesterId" column="requester_id" />
+        <result property="status" column="status" />
+        <result property="reason" column="reason" />
+        <result property="reviewedBy" column="reviewed_by" />
+        <result property="reviewedAt" column="reviewed_at" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <insert id="insert" parameterType="iot.domain.UserDeletionRequest" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_deletion_requests (target_user_id, requester_id, status, reason, created_at)
+        VALUES (#{targetUserId}, #{requesterId}, #{status}, #{reason}, #{createdAt})
+    </insert>
+
+    <select id="findById" resultMap="UserDeletionRequestResultMap">
+        SELECT id, target_user_id, requester_id, status, reason, reviewed_by, reviewed_at, created_at
+        FROM user_deletion_requests
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="findAll" resultMap="UserDeletionRequestResultMap">
+        SELECT id, target_user_id, requester_id, status, reason, reviewed_by, reviewed_at, created_at
+        FROM user_deletion_requests
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByStatus" resultMap="UserDeletionRequestResultMap">
+        SELECT id, target_user_id, requester_id, status, reason, reviewed_by, reviewed_at, created_at
+        FROM user_deletion_requests
+        WHERE status = #{status}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findByRequester" resultMap="UserDeletionRequestResultMap">
+        SELECT id, target_user_id, requester_id, status, reason, reviewed_by, reviewed_at, created_at
+        FROM user_deletion_requests
+        WHERE requester_id = #{requesterId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM user_deletion_requests WHERE status = #{status}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE user_deletion_requests
+        SET status = #{status},
+            reviewed_by = #{reviewedBy},
+            reviewed_at = #{reviewedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM user_deletion_requests WHERE id = #{id}
+    </delete>
+
+</mapper>

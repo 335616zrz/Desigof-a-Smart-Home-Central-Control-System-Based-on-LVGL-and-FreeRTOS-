@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.AlertMapper">
+
+    <resultMap id="AlertResultMap" type="iot.domain.Alert">
+        <id property="id" column="id" />
+        <result property="deviceId" column="device_id" />
+        <result property="ruleId" column="rule_id" />
+        <result property="level" column="level" />
+        <result property="message" column="message" />
+        <result property="status" column="status" />
+        <result property="createdAt" column="created_at" />
+        <result property="acknowledgedAt" column="acknowledged_at" />
+        <result property="closedAt" column="closed_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, device_id, rule_id, level, message, status, created_at, acknowledged_at, closed_at
+    </sql>
+
+    <select id="findAll" resultMap="AlertResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alerts
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="level != null">
+                AND level = #{level}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM alerts
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="level != null">
+                AND level = #{level}
+            </if>
+        </where>
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="AlertResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alerts
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="findByDeviceId" parameterType="string" resultMap="AlertResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alerts
+        WHERE device_id = #{deviceId}
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insert" parameterType="iot.domain.Alert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO alerts
+        (device_id, rule_id, level, message, status, created_at)
+        VALUES
+        (#{deviceId}, #{ruleId}, #{level}, #{message}, #{status}, #{createdAt})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE alerts
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <update id="acknowledge">
+        UPDATE alerts
+        SET status = 'ack', acknowledged_at = #{acknowledgedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="close">
+        UPDATE alerts
+        SET status = 'closed', closed_at = #{closedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM alerts WHERE id = #{id}
+    </delete>
+
+    <select id="findOpenByRuleAndDevice" resultMap="AlertResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alerts
+        WHERE rule_id = #{ruleId}
+          AND device_id = #{deviceId}
+          AND status = 'open'
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="countOpenByDevice" resultType="long">
+        SELECT COUNT(*)
+        FROM alerts
+        WHERE device_id = #{deviceId}
+          AND status = 'open'
+    </select>
+
+    <select id="findAllForExport" resultMap="AlertResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alerts
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="level != null and level != ''">
+                AND level = #{level}
+            </if>
+            <if test="deviceId != null and deviceId != ''">
+                AND device_id = #{deviceId}
+            </if>
+            <if test="from != null">
+                AND created_at &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND created_at &lt;= #{to}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT 10000
+    </select>
+</mapper>

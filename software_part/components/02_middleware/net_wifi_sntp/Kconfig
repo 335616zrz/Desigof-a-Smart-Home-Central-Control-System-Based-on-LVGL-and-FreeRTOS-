@@ -1,0 +1,52 @@
+menu "Wi-Fi + SNTP (net_wifi_sntp)"
+
+config NET_WIFI_SSID
+    string "Wi-Fi SSID"
+    default "YourWiFi"
+
+config NET_WIFI_PASSWORD
+    string "Wi-Fi 密码"
+    default "YourPassword"
+
+config NET_WIFI_FAILURE_RETRY
+    int "驱动内建连接重试次数（failure_retry_cnt，0=只尝试一次）"
+    range 0 15
+    default 5
+
+config NET_WIFI_BACKOFF_BASE_MS
+    int "断线应用侧指数退避起始 (ms)"
+    default 500
+
+config NET_WIFI_BACKOFF_MAX_MS
+    int "断线应用侧指数退避上限 (ms)"
+    default 30000
+
+config NET_WIFI_POWER_SAVE
+    bool "启用 Wi-Fi 省电（Modem-PS）"
+    default y
+
+config NET_SNTP_TZ
+    string "本地时区 TZ 字符串（POSIX 形式，如 CST-8 表示北京时间 UTC+8）"
+    default "CST-8"
+
+config NET_SNTP_SERVER_1
+    string "NTP 服务器 1"
+    default "time.cloudflare.com"
+
+config NET_SNTP_SERVER_2
+    string "NTP 服务器 2"
+    default "pool.ntp.org"
+
+config NET_SNTP_SERVER_3
+    string "NTP 服务器 3"
+    default "time.google.com"
+
+config NET_SNTP_SYNC_INTERVAL_MS
+    int "SNTP 重同步周期 (ms)"
+    range 10000 86400000
+    default 3600000
+    help
+        建议 >= 10 秒。常见生产值为 1 小时。
+
+endmenu
+

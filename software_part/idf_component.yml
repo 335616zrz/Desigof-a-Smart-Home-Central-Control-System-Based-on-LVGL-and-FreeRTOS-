@@ -1,0 +1,4 @@
+dependencies:
+  espressif/esp-adf-libs: '*'
+
+  espressif/esp_websocket_client: '*'

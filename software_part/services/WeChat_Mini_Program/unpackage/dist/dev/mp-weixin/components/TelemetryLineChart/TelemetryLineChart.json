@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "mrsong-charts": "../../uni_modules/mrsong-charts/components/mrsong-charts/mrsong-charts"
+  }
+}

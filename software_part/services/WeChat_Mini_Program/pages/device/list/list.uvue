@@ -1,0 +1,192 @@
+<template>
+	<view class="page">
+		<view class="header">
+			<u-search v-model="keyword" placeholder="搜索设备名称/ID" :showAction="false" />
+			<view class="header-actions">
+				<u-button type="primary" size="mini" @click="openAdd">添加</u-button>
+			</view>
+		</view>
+
+		<view class="list">
+			<DeviceCard v-for="item in filtered" :key="item.deviceId" :device="item" @click="onCardClick" />
+			<u-empty v-if="!loading && filtered.length === 0" text="暂无设备" mode="list" />
+		</view>
+
+		<u-modal v-model:show="addVisible" title="添加设备" showCancelButton @confirm="confirmAdd">
+			<view class="modal-body">
+				<u-form :model="addForm">
+					<u-form-item label="名称" labelWidth="72">
+						<u-input v-model="addForm.name" placeholder="请输入设备名称" clearable />
+					</u-form-item>
+					<u-form-item label="固件" labelWidth="72">
+						<u-input v-model="addForm.firmwareVersion" placeholder="可选" clearable />
+					</u-form-item>
+				</u-form>
+			</view>
+		</u-modal>
+
+		<u-modal v-model:show="credVisible" title="设备凭证" confirmText="我已保存">
+			<view class="modal-body">
+				<view class="kv">
+					<text class="k">deviceId</text>
+					<text class="v">{{ credential.deviceId }}</text>
+				</view>
+				<view class="kv">
+					<text class="k">credentialKey</text>
+					<text class="v">{{ credential.credentialKey }}</text>
+				</view>
+				<view class="kv">
+					<text class="k">credentialSecret</text>
+					<text class="v">{{ credential.credentialSecret }}</text>
+				</view>
+				<view class="kv" v-if="credential.expiresAt">
+					<text class="k">expiresAt</text>
+					<text class="v">{{ credential.expiresAt }}</text>
+				</view>
+
+				<view class="btn-row">
+					<u-button size="mini" @click="copyCredential">复制全部</u-button>
+				</view>
+			</view>
+		</u-modal>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import DeviceCard from '../../../components/DeviceCard/DeviceCard.uvue'
+	import { ROUTES } from '../../../common/constants.js'
+	import { required } from '../../../utils/validator.js'
+	import { useDeviceStore } from '../../../stores/device.js'
+
+	const store = useDeviceStore()
+	const keyword = ref('')
+	const addVisible = ref(false)
+	const credVisible = ref(false)
+	const loading = computed(() => Boolean(store.loading))
+
+	const addForm = reactive({
+		name: '',
+		firmwareVersion: '',
+	})
+
+	const credential = reactive({
+		deviceId: '',
+		credentialKey: '',
+		credentialSecret: '',
+		expiresAt: '',
+	})
+
+	const filtered = computed(() => {
+		const items = store.items || []
+		const q = String(keyword.value || '').trim().toLowerCase()
+		if (!q) return items
+		return items.filter((d : any) => {
+			const name = String(d?.name || '').toLowerCase()
+			const id = String(d?.deviceId || '').toLowerCase()
+			return name.indexOf(q) !== -1 || id.indexOf(q) !== -1
+		})
+	})
+
+	onShow(() => {
+		store.fetchList()
+	})
+
+	function onCardClick(device : any) {
+		const id = device?.deviceId || ''
+		if (!id) return
+		uni.navigateTo({ url: `/pages/device/detail/detail?deviceId=${id}` })
+	}
+
+	function openAdd() {
+		addForm.name = ''
+		addForm.firmwareVersion = ''
+		addVisible.value = true
+	}
+
+	async function confirmAdd() {
+		if (!required(addForm.name)) {
+			uni.showToast({ title: '请输入设备名称', icon: 'none' })
+			return
+		}
+
+		try {
+			const resp : any = await store.provision('auto', {
+				name: addForm.name,
+				firmwareVersion: addForm.firmwareVersion,
+			})
+			credential.deviceId = resp?.deviceId || ''
+			credential.credentialKey = resp?.credentialKey || ''
+			credential.credentialSecret = resp?.credentialSecret || ''
+			credential.expiresAt = resp?.expiresAt || ''
+
+			credVisible.value = true
+			await store.fetchList()
+		} catch (e) {
+			uni.showToast({ title: '添加设备失败', icon: 'none' })
+		}
+	}
+
+	function copyCredential() {
+		const text = JSON.stringify({
+			deviceId: credential.deviceId,
+			credentialKey: credential.credentialKey,
+			credentialSecret: credential.credentialSecret,
+			expiresAt: credential.expiresAt,
+		})
+		uni.setClipboardData({
+			data: text,
+			success: () => uni.showToast({ title: '已复制', icon: 'none' }),
+		})
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.header {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+
+	.header-actions {
+		flex-shrink: 0;
+	}
+
+	.list {
+		padding-bottom: 24px;
+	}
+
+	.modal-body {
+		padding: 6px 0;
+	}
+
+	.kv {
+		margin-bottom: 8px;
+	}
+
+	.k {
+		display: block;
+		color: #666;
+		font-size: 12px;
+		margin-bottom: 2px;
+	}
+
+	.v {
+		display: block;
+		color: #111;
+		font-size: 13px;
+		word-break: break-all;
+	}
+
+	.btn-row {
+		margin-top: 12px;
+	}
+</style>
+

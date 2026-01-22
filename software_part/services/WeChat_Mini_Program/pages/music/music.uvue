@@ -1,0 +1,496 @@
+<template>
+	<view class="page">
+		<view class="header">
+			<u-search v-model="keyword" placeholder="搜索音乐" :showAction="false" @search="refresh" />
+			<view class="header-actions">
+				<u-button size="mini" :loading="loading" @click="refresh">刷新</u-button>
+				<u-button v-if="isAdminUser" type="primary" size="mini" @click="openCreate">新增</u-button>
+			</view>
+		</view>
+
+		<view class="player">
+			<view class="player-title">预览播放</view>
+			<view class="player-name">{{ currentTitle || '未选择曲目' }}</view>
+			<view class="player-actions">
+				<u-button size="mini" type="primary" :disabled="!currentUrl" @click="toggleCurrent">
+					{{ playing ? '暂停' : '播放' }}
+				</u-button>
+				<u-button size="mini" plain :disabled="!currentUrl" @click="stop">停止</u-button>
+				<text class="player-time">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</text>
+			</view>
+		</view>
+
+		<view class="list">
+			<view v-for="t in tracks" :key="t.id" class="item">
+				<view class="row">
+					<view class="name">{{ t.title }}</view>
+					<view class="row-actions">
+						<u-button size="mini" @click="() => onPlay(t)">
+							{{ playing && String(playingId) === String(t.id) ? '暂停' : '播放' }}
+						</u-button>
+						<u-button size="mini" @click="() => copyUrl(resolvePlayableUrl(t.url))">复制URL</u-button>
+						<u-button v-if="isAdminUser" size="mini" type="error" plain @click="() => onDelete(t)">删除</u-button>
+					</view>
+				</view>
+				<view class="meta">{{ t.url }}</view>
+			</view>
+			<EmptyState v-if="!loading && tracks.length === 0" text="暂无音乐" />
+		</view>
+
+		<u-modal v-model:show="createVisible" title="新增音乐" showCancelButton @confirm="confirmCreate">
+			<view class="modal-body">
+				<u-form :model="createForm">
+					<u-form-item label="标题" labelWidth="72">
+						<u-input v-model="createForm.title" placeholder="必填" clearable />
+					</u-form-item>
+					<u-form-item label="URL" labelWidth="72">
+						<u-input v-model="createForm.url" placeholder="必填" clearable />
+					</u-form-item>
+				</u-form>
+			</view>
+		</u-modal>
+	</view>
+</template>
+
+	<script setup lang="uts">
+		import EmptyState from '../../components/EmptyState/EmptyState.uvue'
+		import { createTrack, deleteTrack, listTracks } from '../../api/music.js'
+		import { getMusicBaseUrl, getBaseUrl, getWxEnvVersion, ENV } from '../../common/config.js'
+		import { isAdmin } from '../../utils/permission.js'
+		import { required } from '../../utils/validator.js'
+		import { useAuthStore } from '../../stores/auth.js'
+
+	const auth = useAuthStore()
+	const isAdminUser = computed(() => isAdmin(auth.user as any))
+
+	const keyword = ref('')
+	const loading = ref(false)
+	const tracks = ref<any[]>([])
+
+	const playingId = ref('')
+	const playing = ref(false)
+	const currentTitle = ref('')
+	const currentUrl = ref('')
+	const currentTime = ref(0)
+	const duration = ref(0)
+	let audioCtx : any = null
+	let pendingPlay = false
+	let fallbackUrl = ''
+	let fallbackTried = false
+
+	const createVisible = ref(false)
+	const createForm = reactive({
+		title: '',
+		url: '',
+	})
+
+	onShow(() => {
+		auth.initFromStorage()
+		ensureAudio()
+		refresh()
+	})
+
+	onHide(() => {
+		// 预览播放：离开页面默认暂停，避免“后台仍在播放”造成误解
+		try {
+			audioCtx?.pause?.()
+		} catch (e) {}
+	})
+
+	onUnload(() => {
+		try {
+			audioCtx?.destroy?.()
+		} catch (e) {}
+		audioCtx = null
+	})
+
+	function ensureAudio() {
+		if (audioCtx) return
+		try {
+			audioCtx = uni.createInnerAudioContext()
+		} catch (e) {
+			// Fallback for mp-weixin
+			// @ts-ignore
+			audioCtx = wx.createInnerAudioContext()
+		}
+		audioCtx.autoplay = false
+		// iOS: allow preview audio even when the mute switch is on.
+		try {
+			audioCtx.obeyMuteSwitch = false
+		} catch (e) {}
+		audioCtx.onPlay(() => {
+			pendingPlay = false
+			playing.value = true
+		})
+		audioCtx.onPause(() => {
+			playing.value = false
+		})
+		audioCtx.onStop(() => {
+			playing.value = false
+		})
+		audioCtx.onEnded(() => {
+			playing.value = false
+		})
+		audioCtx.onCanplay(() => {
+			// Some devices are picky about calling play() too early.
+			if (!pendingPlay) return
+			pendingPlay = false
+			try {
+				audioCtx.play()
+			} catch (e) {}
+		})
+		audioCtx.onTimeUpdate(() => {
+			currentTime.value = Number(audioCtx?.currentTime || 0)
+			duration.value = Number(audioCtx?.duration || 0)
+		})
+		audioCtx.onError((err : any) => {
+			pendingPlay = false
+			playing.value = false
+			// Provide actionable hints (format/network/cert/domain whitelist).
+			const code = err?.errCode
+			const msg = String(err?.errMsg || '')
+			// eslint-disable-next-line no-console
+			console.error('[music] audio error:', err, 'src:', audioCtx?.src)
+
+			// Ignore "stop" errors caused by switching tracks quickly.
+			if (msg.includes('player to stop') || msg.includes('errCode:504')) return
+
+			// If backend stores "/music/xxx", but your music server serves at "/xxx", retry once.
+			if (!fallbackTried && fallbackUrl && (code === 10004 || msg.includes('format') || msg.includes('decode'))) {
+				fallbackTried = true
+				try {
+					pendingPlay = true
+					audioCtx.stop()
+				} catch (e) {}
+				try {
+					audioCtx.src = fallbackUrl
+					currentUrl.value = fallbackUrl
+					audioCtx.play()
+					return
+				} catch (e) {}
+			}
+			if (code === 10004) {
+				uni.showToast({ title: '格式不支持(10004)，建议用mp3/m4a/aac', icon: 'none' })
+				return
+			}
+			uni.showToast({ title: code ? `播放失败(${code})` : '播放失败', icon: 'none' })
+		})
+	}
+
+	function normalizeUrl(url : string) : string {
+		const u = (url || '').trim()
+		if (!u) return u
+
+		// Avoid double-encoding (e.g. "%20" -> "%2520") by decoding once and re-encoding.
+		const safeEncodeURI = (raw : string) : string => {
+			try {
+				return encodeURI(decodeURI(raw))
+			} catch (e) {
+				return encodeURI(raw)
+			}
+		}
+
+		// Full/absolute or absolute path.
+		if (/^https?:\/\//i.test(u) || u.startsWith('/')) return safeEncodeURI(u)
+
+		// Otherwise treat as filename only.
+		return '/music/' + safeEncodeURI(u)
+	}
+
+	function resolvePlayableUrl(url : string) : string {
+		const u = normalizeUrl(url)
+		if (!u) return u
+
+		// @ts-ignore
+		const platform = wx?.getSystemInfoSync?.()?.platform || ''
+		const envVersion = getWxEnvVersion()
+		const isDev = envVersion === ENV.DEVELOP
+		// eslint-disable-next-line no-console
+		console.log('[music] resolvePlayableUrl: platform=', platform, 'envVersion=', envVersion, 'isDev=', isDev, 'input=', u)
+
+		// Helper: convert servers.local URL to HTTP gateway
+		const convertToGateway = (inputUrl : string) : string => {
+			// Extract path from servers.local URL
+			const m = inputUrl.match(/^https?:\/\/servers\.local(:\d+)?(\/.*)?$/i)
+			if (!m) return inputUrl
+			let path = m[2] || ''
+			// Avoid double /music/ prefix
+			if (path.startsWith('/music/')) {
+				path = path.substring(6) // Remove leading /music, keep the rest like /cache/xxx.mp3
+			}
+			if (platform === 'devtools') {
+				return `http://localhost:8088/music${path}`
+			} else {
+				// Real device: use configured LAN IP from settings, fallback to default
+				const configuredBase = String(getBaseUrl() || 'http://192.168.1.3:8088').replace(/\/+$/, '')
+				return `${configuredBase}/music${path}`
+			}
+		}
+
+		// Full URL
+		if (/^https?:\/\//i.test(u)) {
+			// In develop mode, convert servers.local to HTTP gateway
+			if (isDev && /servers\.local/i.test(u)) {
+				const converted = convertToGateway(u)
+				// eslint-disable-next-line no-console
+				console.log('[music] converted URL:', converted)
+				return converted
+			}
+			return u
+		}
+
+		// Relative path - needs base URL
+		let base = String(getMusicBaseUrl() || '').replace(/\/+$/, '')
+		// In develop mode, if base contains servers.local, replace with configured HTTP gateway
+		if (isDev && /servers\.local/i.test(base)) {
+			if (platform === 'devtools') {
+				base = 'http://localhost:8088'
+			} else {
+				// Use configured LAN IP from settings
+				base = String(getBaseUrl() || 'http://192.168.1.3:8088').replace(/\/+$/, '')
+			}
+		}
+		if (!base) return u
+		const result = `${base}${u.startsWith('/') ? '' : '/'}${u}`
+		// eslint-disable-next-line no-console
+		console.log('[music] resolved URL:', result)
+		return result
+	}
+
+	async function refresh() {
+		if (loading.value) return
+		loading.value = true
+		try {
+			tracks.value = (await listTracks(keyword.value)) as any
+		} catch (e) {
+			uni.showToast({ title: '加载失败', icon: 'none' })
+		} finally {
+			loading.value = false
+		}
+	}
+
+	function copyUrl(url : string) {
+		uni.setClipboardData({
+			data: url || '',
+			success: () => uni.showToast({ title: '已复制', icon: 'none' }),
+		})
+	}
+
+	function openCreate() {
+		createForm.title = ''
+		createForm.url = ''
+		createVisible.value = true
+	}
+
+	async function confirmCreate() {
+		if (!required(createForm.title) || !required(createForm.url)) {
+			uni.showToast({ title: '请填写标题和URL', icon: 'none' })
+			return
+		}
+		try {
+			await createTrack({ title: createForm.title, url: normalizeUrl(createForm.url) })
+			uni.showToast({ title: '已创建', icon: 'none' })
+			createVisible.value = false
+			await refresh()
+		} catch (e) {
+			uni.showToast({ title: '创建失败', icon: 'none' })
+		}
+	}
+
+	function onPlay(t : any) {
+		ensureAudio()
+		const id = String(t?.id ?? '')
+		const rawUrl = String(t?.url ?? '')
+		const lower = rawUrl.toLowerCase()
+		if (lower.includes('.flac')) {
+			uni.showToast({ title: '小程序端通常不支持 FLAC，请换 mp3/m4a/aac', icon: 'none' })
+			return
+		}
+		const url = resolvePlayableUrl(rawUrl)
+		if (!url) {
+			uni.showToast({ title: 'URL为空', icon: 'none' })
+			return
+		}
+
+		try {
+			// Same track: toggle play/pause
+			if (playingId.value && playingId.value === id) {
+				if (playing.value) {
+					audioCtx.pause()
+				} else {
+					audioCtx.play()
+				}
+				return
+			}
+
+			// Switch track
+			try {
+				audioCtx.stop()
+			} catch (e) {}
+			// Prepare fallback ("/music/x" -> "/x") for some deployments.
+			const normalized = normalizeUrl(rawUrl)
+			fallbackUrl = ''
+			fallbackTried = false
+			if (normalized && normalized.startsWith('/music/')) {
+				fallbackUrl = resolvePlayableUrl(normalized.replace(/^\/music\//, '/'))
+			} else if (normalized && normalized.startsWith('/') && !normalized.startsWith('/music/')) {
+				// If someone stored "/xxx.mp3" but the gateway serves music under "/music/xxx.mp3", retry once.
+				const lower2 = normalized.toLowerCase()
+				const looksAudio = lower2.includes('.mp3') || lower2.includes('.m4a') || lower2.includes('.aac') || lower2.includes('.wav') || lower2.includes('.ogg')
+				if (looksAudio) {
+					fallbackUrl = resolvePlayableUrl('/music' + normalized)
+				}
+			}
+
+			pendingPlay = true
+			audioCtx.src = url
+			currentUrl.value = url
+			currentTitle.value = String(t?.title ?? '')
+			playingId.value = id
+			currentTime.value = 0
+			duration.value = 0
+			// Some devices require waiting for canplay; we still try immediately.
+			try {
+				audioCtx.play()
+			} catch (e) {}
+		} catch (e) {
+			uni.showToast({ title: '播放失败', icon: 'none' })
+		}
+	}
+
+	function toggleCurrent() {
+		if (!currentUrl.value) return
+		try {
+			if (playing.value) audioCtx.pause()
+			else audioCtx.play()
+		} catch (e) {}
+	}
+
+	function stop() {
+		try {
+			audioCtx?.stop?.()
+		} catch (e) {}
+		pendingPlay = false
+		playing.value = false
+		playingId.value = ''
+		currentTime.value = 0
+		duration.value = 0
+	}
+
+	function formatTime(sec : number) : string {
+		const s = Math.max(0, Math.floor(sec || 0))
+		const mm = Math.floor(s / 60)
+		const ss = s % 60
+		return `${mm}:${String(ss).padStart(2, '0')}`
+	}
+
+	function onDelete(t : any) {
+		uni.showModal({
+			title: '确认删除',
+			content: `删除音乐 ${t?.title} ?`,
+			success: async (res : any) => {
+				if (!res?.confirm) return
+				try {
+					await deleteTrack(t.id)
+					uni.showToast({ title: '已删除', icon: 'none' })
+					await refresh()
+				} catch (e) {
+					uni.showToast({ title: '删除失败', icon: 'none' })
+				}
+			},
+		})
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.header {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+
+	.header-actions {
+		display: flex;
+		flex-direction: row;
+		gap: 8px;
+		justify-content: flex-end;
+	}
+
+	.player {
+		background: #fff;
+		border-radius: 12px;
+		padding: 12px;
+		margin-bottom: 12px;
+	}
+
+	.player-title {
+		font-weight: 600;
+	}
+
+	.player-name {
+		margin-top: 6px;
+		color: #111;
+		font-size: 14px;
+	}
+
+	.player-actions {
+		margin-top: 10px;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.player-time {
+		color: #666;
+		font-size: 12px;
+	}
+
+	.item {
+		background: #fff;
+		border-radius: 12px;
+		padding: 12px;
+		margin-bottom: 10px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 10px;
+	}
+
+	.name {
+		font-weight: 600;
+		flex: 1;
+		word-break: break-all;
+	}
+
+	.row-actions {
+		display: flex;
+		flex-direction: row;
+		gap: 8px;
+		flex-shrink: 0;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+
+	.meta {
+		margin-top: 6px;
+		color: #666;
+		font-size: 12px;
+		word-break: break-all;
+	}
+
+	.modal-body {
+		padding: 6px 0;
+	}
+</style>

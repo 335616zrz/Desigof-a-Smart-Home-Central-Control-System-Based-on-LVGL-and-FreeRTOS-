@@ -1,0 +1,28 @@
+<template>
+	<view class="wrap">
+		<u-loading-icon></u-loading-icon>
+		<text class="text">{{ text }}</text>
+	</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		text: {
+			type: String,
+			default: '加载中...',
+		},
+	})
+</script>
+
+<style lang="scss">
+	.wrap {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 8px;
+		padding: 12px 0;
+		color: #666;
+		font-size: 12px;
+	}
+</style>
+

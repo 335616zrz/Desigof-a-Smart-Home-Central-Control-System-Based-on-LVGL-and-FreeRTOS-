@@ -1,0 +1,119 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view class="row">
+				<AlertBadge :level="alert?.level" :status="alert?.status" />
+				<text class="id">#{{ alert?.id || '-' }}</text>
+			</view>
+			<view class="msg">{{ alert?.message || '-' }}</view>
+			<view class="meta">设备：{{ alert?.deviceId || '-' }}</view>
+			<view class="meta">规则ID：{{ alert?.ruleId || '-' }}</view>
+			<view class="meta">创建时间：{{ alert?.createdAt || '-' }}</view>
+			<view class="meta">确认时间：{{ alert?.acknowledgedAt || '-' }}</view>
+			<view class="meta">关闭时间：{{ alert?.closedAt || '-' }}</view>
+
+			<view class="actions">
+				<u-button v-if="alert?.status === 'open'" type="primary" @click="onAck">确认</u-button>
+				<view class="spacer"></view>
+				<u-button v-if="alert?.status !== 'closed'" type="error" plain @click="onClose">关闭</u-button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import AlertBadge from '../../../components/AlertBadge/AlertBadge.uvue'
+	import { useAlertStore } from '../../../stores/alert.js'
+
+	const store = useAlertStore()
+	const id = ref('')
+	const alert = computed(() => store.current)
+
+	onLoad((options : any) => {
+		id.value = options?.id || ''
+	})
+
+	onShow(async () => {
+		if (!id.value) return
+		try {
+			await store.fetchDetail(Number(id.value))
+		} catch (e : any) {
+			const status = e?.statusCode
+			if (status === 403) {
+				// Toast is handled by request wrapper; just go back to a safe page.
+				setTimeout(() => {
+					uni.navigateBack()
+				}, 300)
+				return
+			}
+			uni.showToast({ title: '加载失败', icon: 'none' })
+		}
+	})
+
+	async function onAck() {
+		try {
+			await store.acknowledge(Number(id.value))
+			uni.showToast({ title: '已确认', icon: 'none' })
+			await store.fetchDetail(Number(id.value))
+		} catch (e) {
+			uni.showToast({ title: '操作失败', icon: 'none' })
+		}
+	}
+
+	async function onClose() {
+		try {
+			await store.close(Number(id.value))
+			uni.showToast({ title: '已关闭', icon: 'none' })
+			await store.fetchDetail(Number(id.value))
+		} catch (e) {
+			uni.showToast({ title: '操作失败', icon: 'none' })
+		}
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 14px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.id {
+		color: #666;
+		font-size: 12px;
+	}
+
+	.msg {
+		margin-top: 10px;
+		font-size: 16px;
+		font-weight: 600;
+	}
+
+	.meta {
+		margin-top: 8px;
+		color: #666;
+		font-size: 12px;
+		word-break: break-all;
+	}
+
+	.actions {
+		margin-top: 14px;
+	}
+
+	.spacer {
+		height: 10px;
+	}
+</style>

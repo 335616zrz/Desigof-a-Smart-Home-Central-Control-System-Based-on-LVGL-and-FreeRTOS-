@@ -1,0 +1,213 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view class="title">网络设置</view>
+			<view class="desc">开发调试时，真机需要连接到电脑所在的局域网。请输入电脑的局域网 IP 地址。</view>
+
+			<view class="form-item">
+				<text class="label">局域网地址</text>
+				<u-input
+					v-model="lanAddress"
+					placeholder="例如：192.168.1.3:8088"
+					clearable
+					@blur="onBlur"
+				/>
+				<text class="hint">格式：IP:端口 或 http://IP:端口</text>
+			</view>
+
+			<view class="current" v-if="currentBaseUrl">
+				<text class="label">当前生效地址</text>
+				<text class="value">{{ currentBaseUrl }}</text>
+			</view>
+
+			<view class="actions">
+				<u-button type="primary" size="small" @click="save">保存</u-button>
+				<u-button size="small" plain @click="reset">重置为默认</u-button>
+			</view>
+
+			<view class="tips">
+				<text class="tips-title">如何获取电脑 IP？</text>
+				<text class="tips-item">Windows: 打开 CMD，输入 ipconfig</text>
+				<text class="tips-item">Mac/Linux: 打开终端，输入 ifconfig 或 ip addr</text>
+				<text class="tips-item">通常是 192.168.x.x 或 10.x.x.x 格式</text>
+			</view>
+		</view>
+
+		<view class="card" style="margin-top: 12px;">
+			<view class="title">系统设置</view>
+			<view class="kv">
+				<text class="k">提示</text>
+				<text class="v">此页面用于后续扩展主题、通知、隐私等设置。</text>
+			</view>
+
+			<view class="actions">
+				<u-button size="mini" @click="goProfile">返回个人中心</u-button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { getBaseUrl, setBaseUrl, STORAGE_KEY_BASE_URL } from '../../common/config.js'
+	import { getString } from '../../common/storage.js'
+
+	const lanAddress = ref('')
+	const currentBaseUrl = ref('')
+
+	onShow(() => {
+		// Load saved value
+		const saved = getString(STORAGE_KEY_BASE_URL, '')
+		lanAddress.value = saved || ''
+		currentBaseUrl.value = getBaseUrl()
+	})
+
+	function normalizeInput(input : string) : string {
+		let val = (input || '').trim()
+		if (!val) return ''
+		// Allow user to input just "192.168.1.3:8088" without scheme
+		if (!/^https?:\/\//i.test(val)) {
+			val = `http://${val}`
+		}
+		return val.replace(/\/+$/, '')
+	}
+
+	function onBlur() {
+		// Auto-format on blur
+		if (lanAddress.value) {
+			lanAddress.value = normalizeInput(lanAddress.value).replace(/^https?:\/\//i, '')
+		}
+	}
+
+	function save() {
+		const normalized = normalizeInput(lanAddress.value)
+		if (normalized) {
+			setBaseUrl(normalized)
+			currentBaseUrl.value = getBaseUrl()
+			uni.showToast({ title: '已保存', icon: 'success' })
+		} else {
+			uni.showToast({ title: '请输入有效地址', icon: 'none' })
+		}
+	}
+
+	function reset() {
+		setBaseUrl('')
+		lanAddress.value = ''
+		currentBaseUrl.value = getBaseUrl()
+		uni.showToast({ title: '已重置', icon: 'success' })
+	}
+
+	function goProfile() {
+		uni.navigateBack()
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 14px;
+	}
+
+	.title {
+		font-size: 18px;
+		font-weight: 600;
+		margin-bottom: 8px;
+	}
+
+	.desc {
+		font-size: 13px;
+		color: #666;
+		margin-bottom: 16px;
+		line-height: 1.5;
+	}
+
+	.form-item {
+		margin-bottom: 16px;
+	}
+
+	.label {
+		display: block;
+		font-size: 14px;
+		font-weight: 500;
+		color: #333;
+		margin-bottom: 8px;
+	}
+
+	.hint {
+		display: block;
+		font-size: 12px;
+		color: #999;
+		margin-top: 4px;
+	}
+
+	.current {
+		background: #f5f7fa;
+		border-radius: 8px;
+		padding: 10px 12px;
+		margin-bottom: 16px;
+	}
+
+	.current .label {
+		font-size: 12px;
+		color: #666;
+		margin-bottom: 4px;
+	}
+
+	.current .value {
+		font-size: 14px;
+		color: #333;
+		word-break: break-all;
+	}
+
+	.actions {
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+		margin-top: 12px;
+	}
+
+	.tips {
+		margin-top: 20px;
+		padding: 12px;
+		background: #fef6e6;
+		border-radius: 8px;
+	}
+
+	.tips-title {
+		display: block;
+		font-size: 13px;
+		font-weight: 500;
+		color: #e6a23c;
+		margin-bottom: 8px;
+	}
+
+	.tips-item {
+		display: block;
+		font-size: 12px;
+		color: #909399;
+		line-height: 1.8;
+	}
+
+	.kv {
+		margin-bottom: 10px;
+	}
+
+	.k {
+		display: block;
+		color: #666;
+		font-size: 12px;
+	}
+
+	.v {
+		display: block;
+		margin-top: 4px;
+		color: #111;
+		font-size: 14px;
+	}
+</style>

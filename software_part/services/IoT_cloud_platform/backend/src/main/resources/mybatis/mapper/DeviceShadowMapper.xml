@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.DeviceShadowMapper">
+
+    <resultMap id="DeviceShadowResultMap" type="iot.domain.DeviceShadow">
+        <id property="id" column="id" />
+        <result property="deviceId" column="device_id" />
+        <result property="desired" column="desired" />
+        <result property="desiredUpdatedAt" column="desired_updated_at" />
+        <result property="reported" column="reported" />
+        <result property="reportedUpdatedAt" column="reported_updated_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <select id="findByDeviceId" resultMap="DeviceShadowResultMap">
+        SELECT id, device_id, desired, desired_updated_at, reported, reported_updated_at, updated_at
+        FROM device_shadow
+        WHERE device_id = #{deviceId}
+        LIMIT 1
+    </select>
+
+    <!-- desired: nightLightOn -->
+    <insert id="upsertDesiredNightLight">
+        INSERT INTO device_shadow (device_id, desired, desired_updated_at)
+        VALUES (#{deviceId},
+                JSON_OBJECT('nightLightOn', CAST(#{onJson} AS JSON)),
+                #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            desired = JSON_SET(COALESCE(desired, JSON_OBJECT()),
+                               '$.nightLightOn', CAST(#{onJson} AS JSON)),
+            desired_updated_at = #{updatedAt}
+    </insert>
+
+    <!-- desired: alarmActive -->
+    <insert id="upsertDesiredAlarm">
+        INSERT INTO device_shadow (device_id, desired, desired_updated_at)
+        VALUES (#{deviceId},
+                JSON_OBJECT('alarmActive', CAST(#{activeJson} AS JSON)),
+                #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            desired = JSON_SET(COALESCE(desired, JSON_OBJECT()),
+                               '$.alarmActive', CAST(#{activeJson} AS JSON)),
+            desired_updated_at = #{updatedAt}
+    </insert>
+
+    <!-- reported: nightLightOn -->
+    <insert id="upsertReportedNightLight">
+        INSERT INTO device_shadow (device_id, reported, reported_updated_at)
+        VALUES (#{deviceId},
+                JSON_OBJECT('nightLightOn', CAST(#{onJson} AS JSON)),
+                #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            reported = JSON_SET(COALESCE(reported, JSON_OBJECT()),
+                                '$.nightLightOn', CAST(#{onJson} AS JSON)),
+            reported_updated_at = #{updatedAt}
+    </insert>
+
+    <!-- reported: alarmActive -->
+    <insert id="upsertReportedAlarm">
+        INSERT INTO device_shadow (device_id, reported, reported_updated_at)
+        VALUES (#{deviceId},
+                JSON_OBJECT('alarmActive', CAST(#{activeJson} AS JSON)),
+                #{updatedAt})
+        ON DUPLICATE KEY UPDATE
+            reported = JSON_SET(COALESCE(reported, JSON_OBJECT()),
+                                '$.alarmActive', CAST(#{activeJson} AS JSON)),
+            reported_updated_at = #{updatedAt}
+    </insert>
+
+</mapper>
+

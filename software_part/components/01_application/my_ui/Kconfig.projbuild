@@ -1,0 +1,123 @@
+menu "Chatbot Service Options"
+
+config MY_UI_CHATBOT_ENABLE
+    bool "Enable Chatbot WebSocket client"
+    default n
+    help
+        When enabled, the device will send text from the GPT screen to
+        ws://HOST:PORT/PATH and render assistant responses in the chat log.
+
+config MY_UI_CHATBOT_HOST
+    string "Chatbot host or mDNS name"
+    default "servers.local"
+    help
+        Hostname, mDNS name or IP of the Chatbot server (same LAN).
+
+config MY_UI_CHATBOT_PORT
+    int "Chatbot port"
+    default 3333
+    range 1 65535
+    help
+        Port the Chatbot server listens on (see services/Chatbot/.env PORT).
+
+config MY_UI_CHATBOT_TLS
+    bool "Use TLS (wss://)"
+    default n
+    help
+        Enable this if your server terminates TLS and you have CA configured.
+
+config MY_UI_CHATBOT_TLS_SKIP_CN
+    bool "Skip TLS common-name (CN) check (dev only)"
+    depends on MY_UI_CHATBOT_TLS
+    default y
+    help
+        Development convenience. Keeps certificate chain validation but skips
+        host name (CN/SAN) match. Only enable on trusted LAN during develop.
+
+config MY_UI_CHATBOT_TLS_INSECURE
+    bool "INSECURE: accept any certificate (dev only)"
+    depends on MY_UI_CHATBOT_TLS
+    default n
+    help
+        If enabled, the Chatbot client will not validate the server certificate
+        chain. Use only for quick local testing. DO NOT enable for production.
+
+config MY_UI_CHATBOT_PATH
+    string "WebSocket path"
+    default "/ws"
+    help
+        WebSocket endpoint path of the Chatbot server.
+
+endmenu
+
+menu "Chatbot Advanced"
+
+config MY_UI_CHATBOT_RECONNECT_TIMEOUT_MS
+    int "Reconnect timeout (ms)"
+    default 10000
+    range 1000 600000
+    help
+        Time to wait before the client tries to reconnect after a
+        disconnect or handshake error. Set to 0 to disable auto-reconnect.
+
+config MY_UI_CHATBOT_PING_INTERVAL_SEC
+    int "WebSocket ping interval (sec)"
+    default 10
+    range 0 600
+    help
+        Interval for WebSocket PING frames. 0 disables periodic PING.
+
+config MY_UI_CHATBOT_NET_TIMEOUT_MS
+    int "Network read/write timeout (ms)"
+    default 8000
+    range 100 60000
+    help
+        Timeout used for network read/write operations.
+
+config MY_UI_CHATBOT_KEEPALIVE
+    bool "Enable TCP keep-alive"
+    default y
+    help
+        Enable TCP keep-alive on the underlying transport.
+
+config MY_UI_CHATBOT_KEEPALIVE_IDLE
+    int "Keep-alive idle (sec)"
+    depends on MY_UI_CHATBOT_KEEPALIVE
+    default 5
+    range 1 3600
+
+config MY_UI_CHATBOT_KEEPALIVE_INTERVAL
+    int "Keep-alive interval (sec)"
+    depends on MY_UI_CHATBOT_KEEPALIVE
+    default 5
+    range 1 3600
+
+config MY_UI_CHATBOT_KEEPALIVE_COUNT
+    int "Keep-alive count"
+    depends on MY_UI_CHATBOT_KEEPALIVE
+    default 3
+    range 1 20
+
+endmenu
+
+menu "Weather Service Options"
+
+config MY_UI_WEATHER_HOST
+    string "Weather service host or IP"
+    default "192.168.1.2"
+    help
+        Hostname or IP of services/weather-service running on your PC.
+
+config MY_UI_WEATHER_PORT
+    int "Weather service port"
+    range 1 65535
+    default 3000
+
+config MY_UI_WEATHER_SCHEME
+    bool "Use HTTPS for weather service"
+    default n
+    help
+        Enable if you reverse-proxy the service behind TLS. For local dev
+        keep it disabled (HTTP).
+
+endmenu

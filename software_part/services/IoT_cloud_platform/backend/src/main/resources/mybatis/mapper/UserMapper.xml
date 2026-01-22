@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.UserMapper">
+
+    <resultMap id="UserResultMap" type="iot.domain.User">
+        <id property="id" column="id" />
+        <result property="username" column="username" />
+        <result property="passwordHash" column="password_hash" />
+        <result property="email" column="email" />
+        <result property="role" column="role" />
+        <result property="isProtected" column="is_protected" />
+        <result property="managerId" column="manager_id" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <select id="findByUsername" resultMap="UserResultMap">
+        SELECT id, username, password_hash, email, role, is_protected, manager_id, created_at
+        FROM users
+        WHERE username = #{username}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="iot.domain.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, password_hash, email, role, is_protected, manager_id, created_at)
+        VALUES (#{username}, #{passwordHash}, #{email}, #{role}, #{isProtected}, #{managerId}, #{createdAt})
+    </insert>
+
+    <select id="findAll" resultMap="UserResultMap">
+        SELECT id, username, password_hash, email, role, is_protected, manager_id, created_at
+        FROM users
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM users
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM users
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <insert id="upsertAdmin">
+        INSERT INTO users (username, password_hash, email, role, is_protected, created_at)
+        VALUES (#{username}, #{passwordHash}, #{email}, #{role}, TRUE, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE
+            password_hash = VALUES(password_hash),
+            email = VALUES(email),
+            role = VALUES(role),
+            is_protected = TRUE,
+            created_at = IFNULL(created_at, CURRENT_TIMESTAMP)
+    </insert>
+
+    <select id="findById" resultMap="UserResultMap">
+        SELECT id, username, password_hash, email, role, is_protected, manager_id, created_at
+        FROM users
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="countByRole" resultType="long">
+        SELECT COUNT(*) FROM users WHERE role = #{role}
+    </select>
+
+    <select id="findFirstByRole" resultMap="UserResultMap">
+        SELECT id, username, password_hash, email, role, is_protected, manager_id, created_at
+        FROM users
+        WHERE role = #{role}
+        ORDER BY id ASC
+        LIMIT 1
+    </select>
+
+    <update id="updateRole">
+        UPDATE users SET role = #{role} WHERE id = #{id}
+    </update>
+
+    <update id="updateManagerId">
+        UPDATE users SET manager_id = #{managerId} WHERE id = #{id}
+    </update>
+
+    <select id="findByManagerId" resultMap="UserResultMap">
+        SELECT id, username, password_hash, email, role, is_protected, manager_id, created_at
+        FROM users
+        WHERE manager_id = #{managerId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="countByManagerId" resultType="long">
+        SELECT COUNT(*) FROM users WHERE manager_id = #{managerId}
+    </select>
+
+    <select id="findSecondaryAdminsWithSpace" resultMap="UserResultMap">
+        SELECT u.id, u.username, u.password_hash, u.email, u.role, u.is_protected, u.manager_id, u.created_at
+        FROM users u
+        LEFT JOIN (
+            SELECT manager_id, COUNT(*) as managed_count
+            FROM users
+            WHERE manager_id IS NOT NULL
+            GROUP BY manager_id
+        ) counts ON u.id = counts.manager_id
+        WHERE u.role = 'ROLE_SECONDARY_ADMIN'
+        AND (counts.managed_count IS NULL OR counts.managed_count &lt; #{maxGroupSize})
+        ORDER BY COALESCE(counts.managed_count, 0) ASC
+    </select>
+
+</mapper>

@@ -1,0 +1,109 @@
+<template>
+	<view class="wrap">
+		<view class="title" v-if="title">{{ title }}</view>
+		<view class="chart" :style="{ height: height + 'px' }">
+			<view v-for="p in points" :key="p.key" class="bar" :style="{ height: p.h + '%' }"></view>
+		</view>
+		<view class="meta" v-if="metaText">{{ metaText }}</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		records: {
+			type: Array,
+			default: () => [],
+		},
+		field: {
+			type: String,
+			default: 'value',
+		},
+		title: {
+			type: String,
+			default: '',
+		},
+		height: {
+			type: Number,
+			default: 120,
+		},
+	})
+
+	function toNumber(v : any) : number {
+		const n = Number(v)
+		if (isNaN(n)) return NaN
+		return n
+	}
+
+	function pickValue(payloadStr : string) : number {
+		if (!payloadStr) return NaN
+		try {
+			const obj : any = JSON.parse(payloadStr)
+			return toNumber(obj?.[props.field])
+		} catch (e) {
+			return NaN
+		}
+	}
+
+	const points = computed(() => {
+		const list : any[] = (props.records as any[]) || []
+		const values : number[] = []
+		list.forEach((r : any) => {
+			const v = pickValue(String(r?.payload || ''))
+			if (!isNaN(v)) values.push(v)
+		})
+		if (values.length === 0) return []
+
+		const min = Math.min.apply(null, values as any)
+		const max = Math.max.apply(null, values as any)
+		const span = max - min || 1
+
+		// Keep last N points for rendering.
+		const tail = values.slice(Math.max(0, values.length - 30))
+		return tail.map((v : number, idx : number) => {
+			const h = ((v - min) / span) * 100
+			return { key: String(idx), h }
+		})
+	})
+
+	const metaText = computed(() => {
+		const list : any[] = (props.records as any[]) || []
+		if (list.length === 0) return ''
+		const v = pickValue(String(list[0]?.payload || ''))
+		if (isNaN(v)) return ''
+		return `${props.field}: ${v}`
+	})
+</script>
+
+<style lang="scss">
+	.wrap {
+		background: #fff;
+		border-radius: 12px;
+		padding: 12px;
+	}
+
+	.title {
+		font-weight: 600;
+		margin-bottom: 8px;
+	}
+
+	.chart {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-end;
+		gap: 2px;
+	}
+
+	.bar {
+		flex: 1;
+		background: #3c9cff;
+		border-radius: 2px 2px 0 0;
+		opacity: 0.7;
+	}
+
+	.meta {
+		margin-top: 8px;
+		color: #666;
+		font-size: 12px;
+	}
+</style>
+

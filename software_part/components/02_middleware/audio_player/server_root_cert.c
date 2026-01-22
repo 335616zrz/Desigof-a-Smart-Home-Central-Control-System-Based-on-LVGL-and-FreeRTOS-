@@ -1,0 +1,17 @@
+#include "server_root_cert.h"
+
+// Single definition for the root certificate used by HTTPS (servers.local)
+const char server_root_cert_pem[] =
+R"PEM(-----BEGIN CERTIFICATE-----
+MIIBnzCCAUWgAwIBAgIUUHx7oAGnZyvgzWE4t01ePb4SsBkwCgYIKoZIzj0EAwIw
+GDEWMBQGA1UEAwwNc2VydmVycy5sb2NhbDAeFw0yNTExMDgwMjI2MjZaFw0yNjEx
+MDgwMjI2MjZaMBgxFjAUBgNVBAMMDXNlcnZlcnMubG9jYWwwWTATBgcqhkjOPQIB
+BggqhkjOPQMBBwNCAATcruVqwtxHOzHVHTilIwlQauvRKQRaXf/rSvF0VF+PUJOi
+U0BEYsFTDpnCcTGmLXdS7VVwOBZF1nu9Knr4yuugo20wazAdBgNVHQ4EFgQUK8IS
+fFlFgxYZWhBnDaLd+v6q3iowHwYDVR0jBBgwFoAUK8ISfFlFgxYZWhBnDaLd+v6q
+3iowDwYDVR0TAQH/BAUwAwEB/zAYBgNVHREEETAPgg1zZXJ2ZXJzLmxvY2FsMAoG
+CCqGSM49BAMCA0gAMEUCIQD6Ki5De3tyipj9ajjbcmhoZnJge9x9XzHHcZ3ypi+6
+XwIgAZIB6pmCckmeFViV7Ybz87WWTaS8CwfuRdUm4Pm1iuo=
+-----END CERTIFICATE-----
+
+)PEM";

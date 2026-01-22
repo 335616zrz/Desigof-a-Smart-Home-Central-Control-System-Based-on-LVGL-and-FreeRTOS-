@@ -1,0 +1,456 @@
+<template>
+	<view class="page">
+		<u-skeleton :loading="initialLoading" :animate="true" :rows="10">
+			<view>
+				<!-- Hero Section -->
+				<view class="hero">
+					<HeroCard
+						:title="'指挥中心'"
+						:subtitle="`欢迎，${username || '用户'}`"
+						:mqtt="mqttStatus"
+						:network="networkType"
+						:season="seasonText"
+						:time="nowText"
+					/>
+					<OnlineRatePanel :online="deviceOnline" :total="deviceTotal" />
+				</view>
+
+				<!-- Stats Grid -->
+				<view class="stats-grid">
+					<u-grid :col="2" :border="false" gap="12px">
+						<u-grid-item>
+							<StatCard icon="grid" label="设备总数" :value="deviceTotal" description="已接入设备" tone="info" />
+						</u-grid-item>
+						<u-grid-item>
+							<StatCard icon="checkbox-mark" label="在线设备" :value="deviceOnline" description="状态正常" tone="success" />
+						</u-grid-item>
+						<u-grid-item>
+							<StatCard icon="close-circle" label="离线设备" :value="deviceOffline" description="需检查网络/供电" tone="warning" />
+						</u-grid-item>
+						<u-grid-item>
+							<StatCard icon="error-circle" label="开放告警" :value="openAlertsTotal" description="未处理告警" tone="danger" />
+						</u-grid-item>
+					</u-grid>
+				</view>
+
+				<!-- Charts Section -->
+				<view class="card">
+					<view class="section-head">
+						<view class="section-title">数据视图</view>
+						<u-subsection :list="chartModeList" :current="chartMode" @change="onChartModeChange" />
+					</view>
+				</view>
+
+				<!-- Charts Section -->
+				<view class="charts-section">
+					<TelemetryLineChart
+						title="温度趋势"
+						:data="chartSeries"
+						field="temperature"
+						canvasId="tempChart"
+						:forceUseOldCanvas="forceOldCanvas"
+						:xAxisMin="chartXAxisMin"
+						:xAxisMax="chartXAxisMax"
+						:interactive="chartMode !== 0"
+					/>
+					<TelemetryLineChart
+						title="湿度趋势"
+						:data="chartSeries"
+						field="humidity"
+						canvasId="humidityChart"
+						:forceUseOldCanvas="forceOldCanvas"
+						:xAxisMin="chartXAxisMin"
+						:xAxisMax="chartXAxisMax"
+						:interactive="chartMode !== 0"
+					/>
+				</view>
+
+				<!-- Data Section -->
+				<view class="data-grid">
+					<AlertTimeline title="告警时间线" :alerts="timelineAlerts" @itemClick="goAlertDetail" />
+					<TelemetryTable title="设备最新读数" :rows="telemetryRows" />
+				</view>
+			</view>
+		</u-skeleton>
+
+		<!-- Quick Actions Drawer -->
+		<u-popup v-model:show="quickOpen" mode="right" :closeOnClickOverlay="true" round="16" bgColor="transparent">
+			<view class="quick-drawer">
+				<view class="quick-title">快捷操作</view>
+				<view class="quick-actions">
+					<u-button type="primary" @click="goDevice(); quickOpen = false">设备管理</u-button>
+					<u-button @click="goAlert(); quickOpen = false">查看告警</u-button>
+					<u-button @click="goTelemetry(); quickOpen = false">查看遥测</u-button>
+					<u-button @click="goRule(); quickOpen = false">告警规则</u-button>
+					<u-button @click="goMusic(); quickOpen = false">音乐</u-button>
+					<u-button @click="goProfile(); quickOpen = false">我的</u-button>
+					<u-button :loading="loading" @click="refresh(); quickOpen = false">刷新</u-button>
+					<u-button plain @click="onLogout(); quickOpen = false">退出</u-button>
+				</view>
+			</view>
+		</u-popup>
+
+		<view class="quick-fab" @tap="quickOpen = true">
+			<text class="quick-fab__text">快捷</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import AlertTimeline from '../../components/AlertTimeline/AlertTimeline.uvue'
+	import HeroCard from '../../components/HeroCard/HeroCard.uvue'
+	import OnlineRatePanel from '../../components/OnlineRatePanel/OnlineRatePanel.uvue'
+	import StatCard from '../../components/StatCard/StatCard.uvue'
+	import TelemetryLineChart from '../../components/TelemetryLineChart/TelemetryLineChart.uvue'
+	import TelemetryTable from '../../components/TelemetryTable/TelemetryTable.uvue'
+	import { ROUTES } from '../../common/constants.js'
+	import { useAppStore } from '../../stores/app.js'
+	import { useAuthStore } from '../../stores/auth.js'
+	import { useDeviceStore } from '../../stores/device.js'
+	import { useTelemetryStore } from '../../stores/telemetry.js'
+	import { useAlertStore } from '../../stores/alert.js'
+	import { useAlertRuleStore } from '../../stores/alertRule.js'
+	import { toLocalIsoDateTime } from '../../utils/format.js'
+
+	const app = useAppStore()
+	const auth = useAuthStore()
+	const deviceStore = useDeviceStore()
+	const telemetryStore = useTelemetryStore()
+	const alertStore = useAlertStore()
+	const ruleStore = useAlertRuleStore()
+
+	const loading = ref(false)
+	const initialLoading = ref(true)
+	const now = ref(Date.now())
+	let timer : any = null
+	let pollTimer : any = null
+	// Web 端通过 MQTT 推送几乎实时；小程序端这里用短轮询接近相同的刷新频率。
+	// 优化：从1秒增加到2秒，减少数据库压力，避免与前端大查询产生锁竞争
+	const LIVE_WINDOW_MS = 10 * 60 * 1000
+	const POLL_INTERVAL_MS = 2000
+	// /api/telemetry 范围查询的 pageSize 上限为 10000（后端已限制）；这里取较大值避免“只显示一分钟”。
+	const LIVE_PAGE_SIZE = 2000
+
+	const username = computed(() => (auth.user as any)?.username || '')
+	const networkType = computed(() => app.networkType || 'unknown')
+	const mqttStatus = computed(() => {
+		// 小程序端未直连 MQTT（WebSocket/MQTT 协议较重），用“最近是否持续收到遥测”近似表示链路状态
+		const list : any[] = (telemetryStore.latestByDevice as any[]) || []
+		const latestTs = list.length ? Number((list[0] as any)?.timestamp || 0) : 0
+		if (!latestTs) return 'disconnected'
+		return Date.now() - latestTs <= 60 * 1000 ? 'connected' : 'disconnected'
+	})
+	const seasonText = computed(() => (ruleStore.season as any)?.seasonName || (ruleStore.season as any)?.displayName || '')
+	const nowText = computed(() => {
+		const d = new Date(now.value)
+		return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
+	})
+
+	const deviceTotal = computed(() => (deviceStore.items || []).length)
+	const deviceOnline = computed(() => {
+		return (deviceStore.items || []).filter((d : any) => {
+			const s = String(d?.status || '').toUpperCase()
+			return s === 'ONLINE' || s === 'AUTHENTICATED'
+		}).length
+	})
+	const deviceOffline = computed(() => {
+		return (deviceStore.items || []).filter((d : any) => String(d?.status || '').toUpperCase() === 'OFFLINE').length
+	})
+	const onlineRate = computed(() => {
+		const total = deviceTotal.value || 0
+		if (!total) return 0
+		return Math.round((deviceOnline.value / total) * 100)
+	})
+
+	const openAlertsTotal = computed(() => alertStore.total || 0)
+	const quickOpen = ref(false)
+
+	const chartModeList = [{ name: '实时(近10分钟)' }, { name: '历史数据' }]
+	const chartMode = ref(0)
+	// If your charts appear "stuck" while scrolling (native layer issue), set this to true.
+	const forceOldCanvas = ref(false)
+
+	// 两张折线图共用一份数据源：来自 /api/telemetry 的范围查询结果（与浏览器端 TelemetryChart 的用法一致）
+	const chartSeries = computed(() => (telemetryStore.parsedHistory as any[]) || [])
+	// ECharts x 轴范围：实时模式固定 [now-10min, now]；历史模式 min=dataMin，max=now（与浏览器端一致）
+	const chartXAxisMin = computed(() => chartMode.value === 0 ? now.value - LIVE_WINDOW_MS : 'dataMin')
+	const chartXAxisMax = computed(() => now.value)
+
+	const timelineAlerts = computed(() => (alertStore.items || []).slice(0, 5))
+	const telemetryRows = computed(() => (telemetryStore.latestByDevice as any[] || []).slice(0, 6))
+
+	onShow(() => {
+		// Allow quick toggling via devtools console:
+		// wx.setStorageSync('W_FORCE_OLD_CANVAS', true/false) then reload.
+		try {
+			forceOldCanvas.value = Boolean(uni.getStorageSync('W_FORCE_OLD_CANVAS'))
+		} catch (e) {}
+
+		auth.initFromStorage()
+		getNetwork()
+		startNowTimer()
+		startPollTimer()
+		refresh()
+	})
+
+	onHide(() => {
+		if (timer) {
+			clearInterval(timer)
+			timer = null
+		}
+		if (pollTimer) {
+			clearInterval(pollTimer)
+			pollTimer = null
+		}
+	})
+
+	function startNowTimer() {
+		if (timer) return
+		timer = setInterval(() => {
+			now.value = Date.now()
+		}, 5000)
+	}
+
+	function buildLiveRangeParams() : any {
+		const to = Date.now()
+		const from = to - LIVE_WINDOW_MS
+		return {
+			from: toLocalIsoDateTime(from),
+			to: toLocalIsoDateTime(to),
+			pageSize: LIVE_PAGE_SIZE,
+			page: 1,
+		}
+	}
+
+	function buildHistoryRangeParams() : any {
+		const to = Date.now()
+		const fallbackFrom = to - 24 * 60 * 60 * 1000 // fallback 24h
+		let earliest : number | null = null
+		const devices : any[] = (deviceStore.items as any[]) || []
+		devices.forEach((d : any) => {
+			const t = new Date(d?.createdAt || 0).getTime()
+			if (t && t > 0 && (earliest === null || t < earliest)) earliest = t
+		})
+		const from = earliest !== null ? earliest : fallbackFrom
+		return {
+			from: toLocalIsoDateTime(from),
+			to: toLocalIsoDateTime(to),
+			// Dashboard 历史视图：尽可能多拉取数据点，让时间轴覆盖到“昨天/前几天”（后端上限 10000）
+			// 注意：渲染端会对每个设备的点做采样，避免卡顿。
+			pageSize: 10000,
+			page: 1,
+		}
+	}
+
+	function startPollTimer() {
+		if (pollTimer) return
+		pollTimer = setInterval(() => {
+			// 仅实时模式轮询，且避免并发请求
+			if (chartMode.value !== 0) return
+			if (loading.value || telemetryStore.loading) return
+			telemetryStore.fetchHistory(buildLiveRangeParams()).catch(() => {})
+		}, POLL_INTERVAL_MS)
+	}
+
+	function getNetwork() {
+		uni.getNetworkType({
+			success: (res : any) => {
+				app.setNetworkType(res?.networkType || 'unknown')
+			},
+			fail: () => {
+				app.setNetworkType('unknown')
+			},
+		})
+	}
+
+	async function refresh() {
+		if (loading.value) return
+		loading.value = true
+		try {
+			try {
+				await Promise.all([
+					deviceStore.fetchList(),
+					ruleStore.fetchCurrentSeason(),
+					telemetryStore.fetchHistory(chartMode.value === 0 ? buildLiveRangeParams() : buildHistoryRangeParams()),
+					alertStore.fetchList({ status: 'open', page: 0, pageSize: 5 }),
+				])
+			} catch (e) {
+				// 请求封装会 toast；这里避免 UnhandledPromiseRejection
+			}
+		} finally {
+			loading.value = false
+			if (initialLoading.value) initialLoading.value = false
+		}
+	}
+
+	function onChartModeChange(index : number) {
+		chartMode.value = index
+		// 历史模式下彻底停止轮询，避免轮询的“近10分钟范围查询”覆盖历史查询结果（竞态/返回顺序问题）。
+		if (index !== 0) {
+			if (pollTimer) {
+				clearInterval(pollTimer)
+				pollTimer = null
+			}
+		} else {
+			// 切回实时模式，恢复轮询
+			startPollTimer()
+		}
+		// 切换模式时立即加载对应数据
+		if (index === 0) {
+			telemetryStore.fetchHistory(buildLiveRangeParams()).catch(() => {})
+		} else {
+			telemetryStore.fetchHistory(buildHistoryRangeParams()).catch(() => {})
+		}
+	}
+
+	function goDevice() {
+		uni.navigateTo({ url: '/pages/device/list/list' })
+	}
+
+	function goAlert() {
+		uni.navigateTo({ url: '/pages/alert/list/list' })
+	}
+
+	function goTelemetry() {
+		uni.navigateTo({ url: '/pages/telemetry/history/history' })
+	}
+
+	function goRule() {
+		uni.navigateTo({ url: '/pages/alertRule/list/list' })
+	}
+
+	function goMusic() {
+		uni.navigateTo({ url: '/pages/music/music' })
+	}
+
+	function goProfile() {
+		uni.navigateTo({ url: '/pages/profile/profile' })
+	}
+
+	function goAlertDetail(a : any) {
+		uni.navigateTo({ url: `/pages/alert/detail/detail?id=${a?.id}` })
+	}
+
+	function onLogout() {
+		auth.logout()
+		uni.reLaunch({ url: ROUTES.LOGIN })
+	}
+</script>
+
+<style lang="scss">
+	/* Override uni-app X generated defaults when <canvas> behaves like a top-layer native component.
+	   Keeping page height auto tends to avoid the "chart stays in place while other views scroll" issue. */
+	page {
+		height: auto;
+	}
+
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: var(--w-bg);
+		overflow: visible;
+	}
+
+	.hero {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-bottom: 12px;
+	}
+
+	.stats-grid {
+		margin-bottom: 12px;
+	}
+
+	.card {
+		background: var(--w-card-bg);
+		border-radius: 14px;
+		padding: 12px;
+		margin-bottom: 12px;
+		transition: box-shadow 120ms ease;
+	}
+
+	.section-head {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.section-title {
+		font-weight: 600;
+		color: var(--w-text-primary);
+	}
+
+	.charts-section {
+		/* 确保图表区域不会产生额外空间或浮动 */
+		width: 100%;
+		overflow: visible;
+	}
+
+	.data-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-top: 12px;
+		width: 100%;
+		overflow: visible;
+	}
+
+		.quick-fab {
+			position: fixed;
+			right: 16px;
+			bottom: 24px;
+			width: 52px;
+			height: 52px;
+			border-radius: 26px;
+			background: var(--w-primary);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+			z-index: 9999;
+		}
+
+		.quick-fab:active {
+			transform: scale(0.96);
+		}
+
+		.quick-fab__text {
+			color: #fff;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.quick-drawer {
+			width: 260px;
+			height: 100%;
+			background: var(--w-card-bg);
+			padding: 16px 14px;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.quick-title {
+			font-weight: 700;
+			color: var(--w-text-primary);
+		}
+
+		.quick-actions {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
+
+	@media (min-width: 768px) {
+		.hero {
+			flex-direction: row;
+			align-items: stretch;
+		}
+
+		.data-grid {
+			flex-direction: row;
+		}
+	}
+</style>

@@ -1,0 +1,78 @@
+<template>
+	<view class="stat-card" :class="tone">
+		<view class="icon">
+			<u-icon :name="icon" :color="iconColor" size="22" />
+		</view>
+		<view class="content">
+			<view class="label">{{ label }}</view>
+			<view class="value">
+				<u-count-to :startVal="0" :endVal="value" :duration="800" :bold="true" />
+			</view>
+			<view v-if="description" class="desc">{{ description }}</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { COLORS } from '../../common/theme.js'
+
+	const props = defineProps({
+		icon: { type: String, required: true },
+		label: { type: String, required: true },
+		value: { type: Number, default: 0 },
+		description: { type: String, default: '' },
+		tone: { type: String, default: 'info' }, // info, success, warning, danger
+	})
+
+	const iconColors = {
+		info: COLORS.primary,
+		success: COLORS.success,
+		warning: COLORS.warning,
+		danger: COLORS.danger,
+	}
+
+	const iconColor = computed(() => {
+		const k = props.tone as any
+		return (iconColors as any)[k] || iconColors.info
+	})
+</script>
+
+<style lang="scss">
+	.stat-card {
+		background: var(--w-card-bg);
+		border-radius: 14px;
+		padding: 12px;
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+		align-items: center;
+	}
+
+	.icon {
+		width: 36px;
+		height: 36px;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--w-border);
+	}
+
+	.label {
+		font-size: 12px;
+		color: var(--w-text-secondary);
+	}
+
+	.value {
+		margin-top: 2px;
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--w-text-primary);
+	}
+
+	.desc {
+		margin-top: 2px;
+		font-size: 12px;
+		color: var(--w-text-secondary);
+	}
+</style>

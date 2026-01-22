@@ -1,0 +1,3 @@
+{"header":{"task_id":"6ca6dadf-6dbd-44b6-94d3-8ee9f731b5a3","event":"task-started","attributes":{}},"payload":{}}
+{"header":{"task_id":"6ca6dadf-6dbd-44b6-94d3-8ee9f731b5a3","event":"result-generated","attributes":{"request_uuid":"18ed9d55-e648-4da2-91e7-9ea5ac56b828"}},"payload":{}}
+{"header":{"task_id":"6ca6dadf-6dbd-44b6-94d3-8ee9f731b5a3","event":"task-finished","attributes":{"request_uuid":"18ed9d55-e648-4da2-91e7-9ea5ac56b828"}},"payload":{"output":{"sentence":{"words":[]}},"usage":{"characters":13}}}

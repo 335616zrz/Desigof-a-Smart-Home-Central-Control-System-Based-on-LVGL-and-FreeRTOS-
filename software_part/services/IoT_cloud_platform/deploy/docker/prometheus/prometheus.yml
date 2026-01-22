@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'spring-boot'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - backend:8080
+
+  - job_name: 'emqx'
+    metrics_path: /api/v5/prometheus/stats
+    basic_auth:
+      # NOTE:
+      # - This uses EMQX Dashboard HTTP API auth.
+      # - Set these to match deploy/.env: EMQX_DASHBOARD_USERNAME / EMQX_DASHBOARD_PASSWORD
+      username: YOUR_EMQX_DASHBOARD_USERNAME_HERE
+      password: YOUR_EMQX_DASHBOARD_PASSWORD_HERE
+    static_configs:
+      - targets:
+          - emqx:18083

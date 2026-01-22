@@ -1,0 +1,232 @@
+<template>
+	<view class="page">
+		<view class="header">
+			<u-tabs :list="tabList" v-model:current="tab" :is-scroll="false" @change="onTabChange" @click="onTabChange" />
+			<view class="header-actions">
+				<u-button v-if="tab === 1" type="primary" size="mini" @click="goCreate">新建规则</u-button>
+				<u-button size="mini" :loading="loading" @click="refresh">刷新</u-button>
+			</view>
+		</view>
+
+		<view v-if="tab === 0" class="season">
+			<view class="season-title">当前季节：{{ seasonName || '-' }}</view>
+			<view class="season-tip">系统模板会按当前季节参与告警评估，可在下方启用/禁用。</view>
+		</view>
+
+		<view class="list">
+			<!-- Secondary entry point (in case the header buttons are hidden on small screens) -->
+			<view v-if="tab === 1" class="create-bar">
+				<u-button type="primary" @click="goCreate">新建规则</u-button>
+			</view>
+			<view v-for="r in rules" :key="r.id" class="item">
+				<view class="row">
+					<view class="name">{{ r.name }}</view>
+					<switch :checked="Boolean(r.enabled)" @change="(e) => onToggle(r, e)" @tap.stop />
+				</view>
+				<view class="meta">
+					<text>设备：{{ r.deviceId || '全部' }}</text>
+					<text class="sep">·</text>
+					<text>{{ metricLabel(r.metric) }} {{ r.operator }} {{ r.threshold }}{{ metricUnit(r.metric) }}</text>
+					<text class="sep">·</text>
+					<text>持续：{{ r.durationSeconds || 0 }}s</text>
+					<text class="sep">·</text>
+					<text>级别：{{ levelLabel(r.level) }}</text>
+				</view>
+				<view v-if="r.description" class="desc">{{ r.description }}</view>
+
+				<view v-if="tab === 1" class="ops">
+					<u-button size="mini" @click="() => goEdit(r)">编辑</u-button>
+					<u-button size="mini" type="error" plain @click="() => onDelete(r)">删除</u-button>
+				</view>
+			</view>
+			<u-empty v-if="!loading && rules.length === 0" text="暂无规则" mode="list" />
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { useAlertRuleStore } from '../../../stores/alertRule.js'
+
+	const store = useAlertRuleStore()
+	const tabList = [{ name: '系统模板' }, { name: '自定义规则' }]
+	const tab = ref(0)
+
+	const pageLoading = ref(false)
+	const loading = computed(() => Boolean(pageLoading.value))
+
+	const seasonName = computed(() => {
+		const s : any = store.season as any
+		return s?.seasonName || s?.displayName || ''
+	})
+
+	const rules = computed(() => {
+		return tab.value === 0 ? store.templates || [] : store.userRules || []
+	})
+
+	onShow(() => {
+		refresh()
+	})
+
+	async function refresh() {
+		if (pageLoading.value) return
+		pageLoading.value = true
+		try {
+			try {
+				await store.fetchCurrentSeason()
+			} catch (e) {}
+
+			const season = (store.season as any)?.season
+			await Promise.all([
+				store.fetchTemplates(season || undefined),
+				store.fetchUserRules(),
+			])
+		} finally {
+			pageLoading.value = false
+		}
+	}
+
+	function onTabChange(e : any) {
+		const idx = Number(e?.index ?? e ?? 0)
+		tab.value = isNaN(idx) ? 0 : idx
+	}
+
+	function goCreate() {
+		uni.navigateTo({ url: '/pages/alertRule/edit/edit' })
+	}
+
+	function goEdit(rule : any) {
+		uni.navigateTo({ url: `/pages/alertRule/edit/edit?id=${rule?.id}` })
+	}
+
+	async function onToggle(rule : any, e : any) {
+		const enabled = Boolean(e?.detail?.value)
+		const prev = Boolean(rule?.enabled)
+		rule.enabled = enabled
+		try {
+			await store.toggle(Number(rule.id), enabled)
+		} catch (err) {
+			rule.enabled = prev
+			uni.showToast({ title: '切换失败', icon: 'none' })
+		}
+	}
+
+	function onDelete(rule : any) {
+		uni.showModal({
+			title: '确认删除',
+			content: `删除规则 ${rule?.name || ''} ?`,
+			success: async (res : any) => {
+				if (!res?.confirm) return
+				try {
+					await store.remove(Number(rule.id))
+					uni.showToast({ title: '已删除', icon: 'none' })
+				} catch (e) {
+					uni.showToast({ title: '删除失败', icon: 'none' })
+				}
+			},
+		})
+	}
+
+	function metricLabel(metric : string) : string {
+		if (metric === 'temperature') return '温度'
+		if (metric === 'humidity') return '湿度'
+		return metric || '-'
+	}
+
+	function metricUnit(metric : string) : string {
+		if (metric === 'temperature') return '°C'
+		if (metric === 'humidity') return '%'
+		return ''
+	}
+
+	function levelLabel(level : string) : string {
+		if (level === 'critical') return '危险'
+		if (level === 'warning') return '警告'
+		if (level === 'info') return '提示'
+		return level || '-'
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.header {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+
+	.header-actions {
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+		justify-content: flex-end;
+	}
+
+	.season {
+		background: #fff;
+		border-radius: 12px;
+		padding: 12px;
+		margin-bottom: 12px;
+	}
+
+	.season-title {
+		font-weight: 600;
+	}
+
+	.season-tip {
+		margin-top: 6px;
+		color: #666;
+		font-size: 12px;
+	}
+
+	.item {
+		background: #fff;
+		border-radius: 12px;
+		padding: 12px;
+		margin-bottom: 10px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.name {
+		font-weight: 600;
+	}
+
+	.meta {
+		margin-top: 6px;
+		color: #666;
+		font-size: 12px;
+	}
+
+	.sep {
+		margin: 0 6px;
+	}
+
+	.desc {
+		margin-top: 8px;
+		color: #666;
+		font-size: 12px;
+		word-break: break-all;
+	}
+
+	.ops {
+		margin-top: 10px;
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+	}
+
+	.create-bar {
+		margin-bottom: 12px;
+	}
+</style>

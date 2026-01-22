@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "告警",
+  "usingComponents": {
+    "u-button": "../../../uni_modules/uview-plus/components/u-button/u-button",
+    "u-empty": "../../../uni_modules/uview-plus/components/u-empty/u-empty",
+    "alert-badge": "../../../components/AlertBadge/AlertBadge"
+  }
+}

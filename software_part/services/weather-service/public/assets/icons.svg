@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="location" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/>
+  </symbol>
+  <symbol id="sun" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="4" fill="currentColor"/>
+    <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+    </g>
+  </symbol>
+  <symbol id="moon" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 1 0 21 12.79Z"/>
+  </symbol>
+  <symbol id="cloud" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 19h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 19Z"/>
+  </symbol>
+  <symbol id="overcast" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 19h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 19Z"/>
+    <rect x="4" y="19.5" width="16" height="2" rx="1" fill="currentColor" opacity=".6"/>
+  </symbol>
+  <symbol id="rain" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g fill="currentColor" opacity=".8">
+      <path d="M8 15.5l-1 2M12 16.5l-1 2M16 15.5l-1 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </symbol>
+  <symbol id="drizzle" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".8">
+      <path d="M8.5 15.2v1.6M12 15.2v1.6M15.5 15.2v1.6"/>
+    </g>
+  </symbol>
+  <symbol id="shower" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".9">
+      <path d="M8 15.5l-1.2 2.4M12 15.5l-1.2 2.4M16 15.5l-1.2 2.4"/>
+    </g>
+  </symbol>
+  <symbol id="heavyrain" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity=".95">
+      <path d="M8 15.5l-1.5 3M12 15.5l-1.5 3M16 15.5l-1.5 3"/>
+    </g>
+  </symbol>
+  <symbol id="snow" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g stroke="currentColor" stroke-linecap="round">
+      <path d="M8 16l2 2M10 16l-2 2M14 16l2 2M16 16l-2 2"/>
+    </g>
+  </symbol>
+  <symbol id="sleet" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g stroke="currentColor" stroke-linecap="round">
+      <path d="M8.5 16l1 1M11.5 16l1 1M14.5 16l1 1"/>
+    </g>
+    <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M8 15.5l-1 2M12 15.5l-1 2M16 15.5l-1 2"/>
+    </g>
+  </symbol>
+  <symbol id="thunder" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 12h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 12Z"/>
+    <path fill="currentColor" d="M11 13l-2 5h2l-1 4 4-6h-2l1-3z"/>
+  </symbol>
+  <symbol id="hail" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M6 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1A4 4 0 0 0 6 14Z"/>
+    <g fill="currentColor" opacity=".9">
+      <circle cx="8.5" cy="16.5" r="1"/><circle cx="12" cy="16.5" r="1"/><circle cx="15.5" cy="16.5" r="1"/>
+    </g>
+  </symbol>
+  <symbol id="haze" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M5 8h14a1 1 0 0 0 0-2H5a1 1 0 1 0 0 2Zm-2 4h18a1 1 0 0 0 0-2H3a1 1 0 0 0 0 2Zm2 4h14a1 1 0 0 0 0-2H5a1 1 0 0 0 0 2Z"/>
+  </symbol>
+  <symbol id="fog" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M3 9h12a1 1 0 0 0 0-2H3a1 1 0 1 0 0 2Zm0 4h18a1 1 0 0 0 0-2H3a1 1 0 0 0 0 2Zm0 4h10a1 1 0 1 0 0-2H3a1 1 0 1 0 0 2Z"/>
+  </symbol>
+  <symbol id="sand" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M2 18c3-2 5-3 10-3s7 1 10 3v2H2v-2Z"/>
+    <path fill="currentColor" opacity=".7" d="M2 14c3-2 5-3 10-3s7 1 10 3v2H2v-2Z"/>
+  </symbol>
+  <symbol id="wind" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M3 10h9a2 2 0 1 0-2-2M3 14h13a2 2 0 1 1-2 2M3 18h7a2 2 0 1 0-2-2" stroke="currentColor" stroke-width="2" fill="none"/>
+  </symbol>
+</svg>

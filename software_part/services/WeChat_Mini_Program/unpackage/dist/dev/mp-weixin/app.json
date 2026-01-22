@@ -1,0 +1,27 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/chartTest/chartTest",
+    "pages/login/login",
+    "pages/register/register",
+    "pages/device/list/list",
+    "pages/device/detail/detail",
+    "pages/telemetry/history/history",
+    "pages/alertRule/list/list",
+    "pages/alertRule/edit/edit",
+    "pages/alert/list/list",
+    "pages/alert/detail/detail",
+    "pages/profile/profile",
+    "pages/settings/settings",
+    "pages/user/user",
+    "pages/music/music"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "IoT 智能中控",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "permission": {},
+  "usingComponents": {}
+}

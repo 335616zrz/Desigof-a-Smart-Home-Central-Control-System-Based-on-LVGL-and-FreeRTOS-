@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.DeviceMapper">
+
+    <resultMap id="DeviceResultMap" type="iot.domain.Device">
+        <id property="id" column="id" />
+        <result property="deviceId" column="device_id" />
+        <result property="name" column="name" />
+        <result property="status" column="status" />
+        <result property="firmwareVersion" column="firmware_version" />
+        <result property="ownerId" column="owner_id" />
+        <result property="lastSeenAt" column="last_seen_at" />
+        <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, device_id, name, status, firmware_version, owner_id, last_seen_at, created_at
+    </sql>
+
+    <select id="findAll" resultMap="DeviceResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM devices
+        ORDER BY id DESC
+    </select>
+
+    <select id="findByOwnerId" resultMap="DeviceResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM devices
+        WHERE owner_id = #{ownerId}
+        ORDER BY id DESC
+    </select>
+
+    <select id="findByDeviceId" parameterType="string" resultMap="DeviceResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM devices
+        WHERE device_id = #{deviceId}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="iot.domain.Device" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO devices
+        (device_id, name, status, firmware_version, owner_id, last_seen_at)
+        VALUES
+        (#{deviceId}, #{name}, #{status}, #{firmwareVersion}, #{ownerId}, #{lastSeenAt})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE devices
+        SET status = #{status}, last_seen_at = #{lastSeenAt}
+        WHERE device_id = #{deviceId}
+    </update>
+
+    <update id="update" parameterType="iot.domain.Device">
+        UPDATE devices
+        SET name = #{name},
+            status = #{status},
+            firmware_version = #{firmwareVersion},
+            owner_id = #{ownerId},
+            last_seen_at = #{lastSeenAt}
+        WHERE device_id = #{deviceId}
+    </update>
+
+    <delete id="deleteByDeviceId" parameterType="string">
+        DELETE FROM devices WHERE device_id = #{deviceId}
+    </delete>
+</mapper>

@@ -1,0 +1,13 @@
+{
+  "name": "weather-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Simple weather proxy service + static site (Amap weather API)",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

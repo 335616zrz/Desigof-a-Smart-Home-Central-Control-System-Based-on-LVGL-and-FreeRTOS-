@@ -1,0 +1,95 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view class="title">注册</view>
+
+			<u-form :model="form">
+				<u-form-item label="用户名" labelWidth="80">
+					<u-input v-model="form.username" placeholder="3-64 位" clearable />
+				</u-form-item>
+
+				<u-form-item label="密码" labelWidth="80">
+					<u-input v-model="form.password" type="password" placeholder="至少 6 位" password />
+				</u-form-item>
+
+				<u-form-item label="邮箱" labelWidth="80">
+					<u-input v-model="form.email" placeholder="可选" clearable />
+				</u-form-item>
+			</u-form>
+
+			<u-button type="primary" :loading="loading" :disabled="loading" @click="onRegister">注册并登录</u-button>
+			<view class="spacer"></view>
+			<u-button plain @click="goLogin">已有账号？去登录</u-button>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { useAuthStore } from '../../stores/auth.js'
+	import { ROUTES } from '../../common/constants.js'
+	import { isEmail, isStrongPassword, required } from '../../utils/validator.js'
+
+	const auth = useAuthStore()
+	const loading = ref(false)
+
+	const form = reactive({
+		username: '',
+		password: '',
+		email: '',
+	})
+
+	function goLogin() {
+		uni.navigateBack()
+	}
+
+	async function onRegister() {
+		if (loading.value) return
+		if (!required(form.username)) {
+			uni.showToast({ title: '请输入用户名', icon: 'none' })
+			return
+		}
+		if (!isStrongPassword(form.password, 6)) {
+			uni.showToast({ title: '密码至少 6 位，且包含两种字符', icon: 'none' })
+			return
+		}
+		if (required(form.email) && !isEmail(form.email)) {
+			uni.showToast({ title: '邮箱格式不正确', icon: 'none' })
+			return
+		}
+
+		loading.value = true
+		try {
+			await auth.register(form.username, form.password, form.email)
+			uni.reLaunch({ url: ROUTES.INDEX })
+		} catch (e) {
+			uni.showToast({ title: '注册失败', icon: 'none' })
+		} finally {
+			loading.value = false
+		}
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 24px;
+		background: #f7f8fa;
+	}
+
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 20px;
+	}
+
+	.title {
+		font-size: 20px;
+		font-weight: 600;
+		margin-bottom: 16px;
+	}
+
+	.spacer {
+		height: 12px;
+	}
+</style>
+

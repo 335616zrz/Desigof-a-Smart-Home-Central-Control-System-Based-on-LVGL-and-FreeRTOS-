@@ -1,0 +1,1 @@
+<view class="{{['badge', f, virtualHostClass]}}" id="{{e}}" change:eS="{{uV.sS}}" eS="{{$eS[e]}}" change:eA="{{uV.sA}}" eA="{{$eA[e]}}" style="{{virtualHostStyle}}" hidden="{{virtualHostHidden || false}}"><text>{{a}}</text><text wx:if="{{b}}" class="sep">·</text><text wx:if="{{c}}">{{d}}</text></view><wxs src="/common/uniView.wxs" module="uV"/>

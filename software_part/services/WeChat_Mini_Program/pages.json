@@ -1,0 +1,132 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://doc.dcloud.net.cn/uni-app-x/collocation/pagesjson.html
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "仪表盘"
+			}
+		},
+		{
+			"path": "pages/chartTest/chartTest",
+			"style": {
+				"navigationBarTitleText": "图表测试"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/register/register",
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/settings/settings",
+			"style": {
+				"navigationBarTitleText": "系统设置"
+			}
+		},
+		{
+			"path": "pages/user/user",
+			"style": {
+				"navigationBarTitleText": "用户管理"
+			}
+		},
+		{
+			"path": "pages/music/music",
+			"style": {
+				"navigationBarTitleText": "音乐管理"
+			}
+		}
+	],
+	"subPackages": [
+		{
+			"root": "pages/device",
+			"pages": [
+				{
+					"path": "list/list",
+					"style": {
+						"navigationBarTitleText": "设备"
+					}
+				},
+				{
+					"path": "detail/detail",
+					"style": {
+						"navigationBarTitleText": "设备详情"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/telemetry",
+			"pages": [
+				{
+					"path": "history/history",
+					"style": {
+						"navigationBarTitleText": "遥测"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/alertRule",
+			"pages": [
+				{
+					"path": "list/list",
+					"style": {
+						"navigationBarTitleText": "告警规则"
+					}
+				},
+				{
+					"path": "edit/edit",
+					"style": {
+						"navigationBarTitleText": "编辑告警规则"
+					}
+				}
+			]
+		},
+		{
+			"root": "pages/alert",
+			"pages": [
+				{
+					"path": "list/list",
+					"style": {
+						"navigationBarTitleText": "告警"
+					}
+				},
+				{
+					"path": "detail/detail",
+					"style": {
+						"navigationBarTitleText": "告警详情"
+					}
+				}
+			]
+		}
+	],
+	"lazyCodeLoading": "requiredComponents",
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^u-(.*)": "uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^up-(.*)": "uni_modules/uview-plus/components/u-$1/u-$1.vue",
+			"^mrsong-charts$": "uni_modules/mrsong-charts/components/mrsong-charts/mrsong-charts.vue"
+		}
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "IoT 智能中控",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}

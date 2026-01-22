@@ -1,0 +1,27 @@
+menu "Voice AFE (WakeNet / MultiNet wrapper)"
+
+config VOICE_AFE_ENABLE
+    bool "Enable voice AFE middleware"
+    default n
+    help
+        Wrap INMP441 PCM capture with optional ESP-SR AFE (WakeNet+MultiNet) and expose
+        unified callbacks for PCM streaming and command events.
+
+config VOICE_AFE_USE_GMF
+    bool "Use espressif/gmf_ai_audio + ESP-SR"
+    default n
+    depends on VOICE_AFE_ENABLE
+    help
+        When enabled, the middleware instantiates gmf_ai_audio AFE to run WakeNet/MultiNet locally.
+        When disabled, it falls back to raw INMP441 PCM with no wake/command detection.
+
+config VOICE_AFE_PCM_BUFFER_SAMPLES
+    int "PCM buffer samples per chunk"
+    range 128 2048
+    default 256
+    depends on VOICE_AFE_ENABLE
+    help
+        Number of 16-bit mono samples to read per loop when not using GMF (legacy mode).
+        256 samples at 16 kHz ≈ 16 ms.
+
+endmenu

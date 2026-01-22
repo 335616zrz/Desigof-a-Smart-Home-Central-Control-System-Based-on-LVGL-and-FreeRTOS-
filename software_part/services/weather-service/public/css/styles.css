@@ -1,0 +1,104 @@
+:root{
+  /* 统一浅色主题 */
+  --bg:#f5f9ff; --fg:#061327; --muted:#5d7893; --card:#ffffff; --accent:#1f9ced; --err:#cf2b2b;
+  --border:#d7e3f2; --chip-bg:#f1f7ff; --chip-border:#dbe9f7;
+  --grad-day: linear-gradient(180deg, #cfe9ff 0%, #ffffff 85%);
+  --grad-night: linear-gradient(180deg, #eaf3ff 0%, #ffffff 85%);
+}
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+main{ max-width:920px; margin:0 auto; padding:16px; display:grid; gap:16px }
+
+/* === Fixed 480x320 panel mode === */
+body.panel-480x320{ display:grid; place-items:center; background:#0b1220 }
+body.panel-480x320 main{
+  width:480px; height:320px; padding:8px; gap:6px;
+  margin:0; display:grid; grid-template-rows: auto 1fr auto; overflow:hidden
+}
+/* Keep toolbar + hero + forecast; hide debug/footer only */
+body.panel-480x320 .rawbox,
+body.panel-480x320 .site-footer{ display:none !important }
+/* Toolbar (compact) */
+body.panel-480x320 .query{ padding:8px; border-radius:10px }
+body.panel-480x320 .query .selectors{ grid-template-columns: 1fr 1fr 1fr auto; gap:6px }
+body.panel-480x320 select{ padding:6px 8px; font-size:12px }
+body.panel-480x320 .primary{ padding:8px 10px; font-size:12px }
+
+/* Hero (compact) */
+body.panel-480x320 .hero{
+  padding:10px 12px; border-radius:12px; display:flex; flex-direction:column; min-height:0
+}
+/* Per request: try 18px typography for the hero section */
+body.panel-480x320 .hero-top{ font-size:18px }
+body.panel-480x320 .location{ font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+body.panel-480x320 .update{ font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+body.panel-480x320 .hero-main{ flex:1 1 auto; margin-top:2px; align-items:flex-end; gap:4px; min-height:0 }
+/* Temperature 24px as requested */
+body.panel-480x320 .temp{ font-size:24px }
+body.panel-480x320 .temp::after{ top:-6px }
+body.panel-480x320 .icon.big{ width:22px; height:22px }
+body.panel-480x320 .text{ font-size:18px }
+body.panel-480x320 .chips{ margin-top:4px }
+body.panel-480x320 .chip{ font-size:18px; padding:2px 6px }
+
+/* Forecast (compact) */
+body.panel-480x320 .cards{ padding:8px; border-radius:10px }
+body.panel-480x320 .section-title{ margin:0 0 6px; font-size:12px }
+/* Ensure four forecast cards fit without horizontal scroll */
+body.panel-480x320 .scroll{ display:grid !important; grid-template-columns: repeat(4, 1fr); gap:6px; overflow:hidden; padding-bottom:0 }
+body.panel-480x320 .fcard{ min-width:0; width:100%; padding:8px; border-radius:10px }
+body.panel-480x320 .fcard .day{ font-size:11px }
+body.panel-480x320 .fcard .t{ margin:4px 0; gap:4px }
+body.panel-480x320 .fcard .t .icon{ width:24px; height:24px }
+
+/* toolbar */
+.toolbar{ display:grid; gap:8px }
+.query{ display:flex; flex-direction:column; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px }
+.query .selectors{ display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:8px; align-items:center }
+select{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#fff; color:var(--fg) }
+.primary{ padding:12px 16px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; cursor:pointer }
+.primary:disabled{ opacity:.6; cursor:not-allowed }
+/* 分段切换已移除 */
+.notice{ margin-top:4px; padding:8px 10px; border-left:4px solid var(--err); background:#fff1f1; color:#6b1111; border-radius:6px }
+
+/* hero */
+.hero{ position:relative; border-radius:18px; padding:16px; background:var(--grad-day); border:1px solid var(--border); overflow:hidden; transition:background .3s ease }
+.hero-top{ display:flex; align-items:center; justify-content:space-between; color:var(--muted) }
+.location{ display:flex; gap:6px; align-items:center; font-weight:700 }
+.update{ color:var(--muted); font-size:12px }
+.hero-main{ display:flex; align-items:end; justify-content:space-between; margin-top:10px }
+.temp{ font-size:68px; font-weight:800; line-height:1; letter-spacing:-1px; position:relative }
+.temp::after{ content:'°'; position:relative; left:2px; top:-8px; font-size:.6em; opacity:.9 }
+.state{ display:flex; align-items:center; gap:10px }
+.icon{ width:22px; height:22px; color:var(--fg) }
+.icon.big{ width:56px; height:56px }
+.text{ font-size:18px; font-weight:700 }
+.chips{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap }
+.chip{ background:var(--chip-bg); border:1px solid var(--chip-border); color:var(--fg); padding:6px 8px; border-radius:999px; font-size:12px }
+
+/* forecast cards */
+.cards{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px }
+.section-title{ margin:0 0 8px; font-size:16px; color:var(--muted) }
+.scroll{ display:flex; gap:10px; overflow-x:auto; padding-bottom:2px }
+.fcard{ min-width:140px; background:#ffffff; border:1px solid var(--border); border-radius:12px; padding:10px }
+.fcard .day{ color:var(--muted); font-size:12px }
+.fcard .t{ display:flex; align-items:center; gap:6px; margin:6px 0 }
+.fcard .t .icon{ width:28px; height:28px }
+.fcard .wx{ font-weight:700 }
+.fcard .range{ color:#093158; font-weight:700 }
+
+/* raw */
+.rawbox{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px }
+.raw{ white-space:pre-wrap; background:#f8fbff; padding:12px; border-radius:10px; border:1px solid var(--border); max-height:340px; overflow:auto }
+
+.site-footer{ text-align:center; color:var(--muted); padding:16px }
+
+/* responsive */
+@media (min-width: 640px){
+  .temp{ font-size:84px }
+  .icon.big{ width:64px; height:64px }
+}

@@ -1,0 +1,42 @@
+menu "IoT MQTT (EMQX uplink)"
+
+config IOT_MQTT_ENABLE
+    bool "Enable MQTT uplink for IoT platform"
+    default y
+    help
+        Enable ESP-MQTT client to publish telemetry to the IoT cloud platform
+        (EMQX broker). Disable if MQTT is not needed.
+
+config IOT_MQTT_BROKER_URI
+    string "MQTT broker URI"
+    depends on IOT_MQTT_ENABLE
+    default "mqtt://servers.local:1883"
+    help
+        URI to connect, e.g. mqtt://<host>:1883 . Use WebSocket only if
+        required; TCP is recommended for the ESP32 device.
+
+config IOT_MQTT_USERNAME
+    string "MQTT username"
+    depends on IOT_MQTT_ENABLE
+    default "iot_core"
+
+config IOT_MQTT_PASSWORD
+    string "MQTT password"
+    depends on IOT_MQTT_ENABLE
+    default ""
+    help
+        MQTT password for the uplink user. Keep it empty in the repo and set it
+        locally via menuconfig / sdkconfig.
+
+config IOT_MQTT_DEVICE_ID
+    string "Device ID used in topic devices/<id>/state"
+    depends on IOT_MQTT_ENABLE
+    default "ESP32S3_001"
+
+config IOT_MQTT_PUB_PERIOD_MS
+    int "Publish period (ms) for telemetry"
+    depends on IOT_MQTT_ENABLE
+    range 1000 60000
+    default 5000
+
+endmenu

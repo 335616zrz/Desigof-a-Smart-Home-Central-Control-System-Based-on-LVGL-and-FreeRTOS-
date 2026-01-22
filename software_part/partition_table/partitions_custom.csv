@@ -1,0 +1,12 @@
+# ESP-IDF Partition Table (OTA)
+# Name,   Type, SubType, Offset,    Size,      Flags
+# NOTE:
+# - OTA 需要：otadata + 至少两个 app 槽位（ota_0/ota_1）
+# - app 分区 offset 必须 0x10000 对齐
+nvs,      data, nvs,     0x9000,    0x6000,
+otadata,  data, ota,     0xF000,    0x2000,
+phy_init, data, phy,     0x11000,   0x1000,
+
+# OTA app slots (each 0x780000 = 7.5MB)
+ota_0,    app,  ota_0,   0x20000,   0x780000,
+ota_1,    app,  ota_1,   0x7A0000,  0x780000,

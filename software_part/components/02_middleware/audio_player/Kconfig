@@ -1,0 +1,52 @@
+menu "Audio Player"
+
+config AUDIO_PLAYER_HTTP_BUFSZ
+    int "HTTP request chunk size (bytes)"
+    range 1024 32768
+    default 8192
+    help
+        Size of each HTTP(S) read request. Larger values reduce CPU wakeups
+        and can improve throughput on stable networks at the cost of latency.
+
+config AUDIO_PLAYER_RINGBUF_SZ
+    int "Pipeline ring buffer size (bytes)"
+    range 8192 262144
+    default 65536
+    help
+        Size of the ring buffer between HTTP -> decoder and decoder -> I2S.
+        Larger buffers reduce underruns on bursty networks.
+
+config AUDIO_PLAYER_HTTP_STACK_IN_EXT
+    bool "Place HTTP stream task stack in external RAM (PSRAM)"
+    default n
+    help
+        When disabled (recommended), the HTTP stream task stack stays in
+        internal RAM for better latency. Enable only if internal RAM is tight.
+
+config AUDIO_PLAYER_HTTP_TASK_PRIO
+    int "HTTP stream task priority"
+    range 3 10
+    default 8
+
+config AUDIO_PLAYER_DEC_STACK_IN_EXT
+    bool "Place decoder task stack in external RAM (PSRAM)"
+    default y
+    help
+        When enabled, decoder tasks try to allocate their stack in external
+        RAM (PSRAM). This can significantly reduce pressure on internal RAM
+        on ESP32-S3 with SPIRAM stack enabled. Disable if you see instability
+        around decoder tasks.
+
+config AUDIO_PLAYER_DEC_TASK_PRIO
+    int "Decoder task priority"
+    range 3 10
+    default 7
+
+config AUDIO_PLAYER_I2S_SINK_BUF
+    int "I2S sink bridge buffer (bytes)"
+    range 1024 16384
+    default 4096
+
+endmenu
+
+# Prefill options removed: reverted to immediate playback

@@ -1,0 +1,86 @@
+<template>
+	<view :class="['badge', levelClass]">
+		<text>{{ levelText }}</text>
+		<text v-if="statusText" class="sep">·</text>
+		<text v-if="statusText">{{ statusText }}</text>
+	</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		level: {
+			type: String,
+			default: '',
+		},
+		status: {
+			type: String,
+			default: '',
+		},
+	})
+
+	const normLevel = computed(() => String(props.level || '').toLowerCase())
+	const normStatus = computed(() => String(props.status || '').toLowerCase())
+
+	const levelText = computed(() => {
+		const l = normLevel.value
+		if (l === 'critical') return '危险'
+		if (l === 'warning') return '警告'
+		if (l === 'info') return '提示'
+		return l || '告警'
+	})
+
+	const statusText = computed(() => {
+		const s = normStatus.value
+		if (!s) return ''
+		if (s === 'open') return '未处理'
+		if (s === 'ack') return '已确认'
+		if (s === 'closed') return '已关闭'
+		return s
+	})
+
+	const levelClass = computed(() => {
+		const l = normLevel.value
+		if (l === 'critical') return 'critical'
+		if (l === 'warning') return 'warning'
+		if (l === 'info') return 'info'
+		return 'default'
+	})
+</script>
+
+<style lang="scss">
+	.badge {
+		display: inline-flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 4px;
+		padding: 2px 8px;
+		border-radius: 999px;
+		font-size: 12px;
+		line-height: 18px;
+	}
+
+	.sep {
+		opacity: 0.7;
+	}
+
+	.critical {
+		background: #fff1f0;
+		color: #cf1322;
+	}
+
+	.warning {
+		background: #fff7e6;
+		color: #ad6800;
+	}
+
+	.info {
+		background: #e6f7ff;
+		color: #096dd9;
+	}
+
+	.default {
+		background: #f2f3f5;
+		color: #666;
+	}
+</style>
+

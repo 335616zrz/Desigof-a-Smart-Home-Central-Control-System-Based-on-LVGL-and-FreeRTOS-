@@ -1,0 +1,108 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view class="title">个人中心</view>
+			<view class="kv">
+				<text class="k">用户名</text>
+				<text class="v">{{ user?.username || '-' }}</text>
+			</view>
+			<view class="kv">
+				<text class="k">角色</text>
+				<text class="v">{{ user?.role || '-' }}</text>
+			</view>
+			<view class="kv">
+				<text class="k">邮箱</text>
+				<text class="v">{{ user?.email || '-' }}</text>
+			</view>
+
+			<view class="actions">
+				<u-button size="mini" :loading="loading" @click="refresh">刷新资料</u-button>
+				<u-button size="mini" plain @click="goSettings">系统设置</u-button>
+				<u-button size="mini" type="error" plain @click="onLogout">退出登录</u-button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { ROUTES } from '../../common/constants.js'
+	import { useAuthStore } from '../../stores/auth.js'
+
+	const auth = useAuthStore()
+	const loading = ref(false)
+	const user = computed(() => auth.user as any)
+
+	onShow(() => {
+		auth.initFromStorage()
+		// Best-effort: refresh full profile info.
+		refresh()
+	})
+
+	async function refresh() {
+		if (loading.value) return
+		loading.value = true
+		try {
+			await auth.fetchProfile()
+		} catch (e) {
+			// ignore
+		} finally {
+			loading.value = false
+		}
+	}
+
+	function goSettings() {
+		uni.navigateTo({ url: '/pages/settings/settings' })
+	}
+
+	function onLogout() {
+		auth.logout()
+		uni.reLaunch({ url: ROUTES.LOGIN })
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 14px;
+	}
+
+	.title {
+		font-size: 18px;
+		font-weight: 600;
+		margin-bottom: 12px;
+	}
+
+	.kv {
+		margin-bottom: 10px;
+	}
+
+	.k {
+		display: block;
+		color: #666;
+		font-size: 12px;
+	}
+
+	.v {
+		display: block;
+		margin-top: 4px;
+		color: #111;
+		font-size: 14px;
+		word-break: break-all;
+	}
+
+	.actions {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 12px;
+	}
+</style>
+

@@ -1,0 +1,209 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view v-if="isSystemTemplate" class="template-tip">
+				系统模板规则只支持启用/禁用（不可编辑其他字段）。
+			</view>
+
+			<u-form :model="form">
+				<u-form-item label="名称" labelWidth="80">
+					<u-input v-model="form.name" placeholder="规则名称" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="说明" labelWidth="80">
+					<u-input v-model="form.description" placeholder="可选" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="设备ID" labelWidth="80">
+					<u-input v-model="form.deviceId" placeholder="留空表示全部设备" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="指标" labelWidth="80">
+					<u-input v-model="form.metric" placeholder="temperature / humidity ..." clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="操作符" labelWidth="80">
+					<u-input v-model="form.operator" placeholder=">, <, >=, <=, ==, !=" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="阈值" labelWidth="80">
+					<u-input v-model="form.threshold" placeholder="数字" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="持续(s)" labelWidth="80">
+					<u-input v-model="form.durationSeconds" placeholder="例如 60" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="季节" labelWidth="80">
+					<u-input v-model="form.season" placeholder="留空=全年 / summer/winter/transition" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="类型" labelWidth="80">
+					<u-input v-model="form.conditionType" placeholder="可选: above / below" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="级别" labelWidth="80">
+					<u-input v-model="form.level" placeholder="critical / warning / info" clearable :disabled="isSystemTemplate" />
+				</u-form-item>
+				<u-form-item label="启用" labelWidth="80">
+					<switch :checked="Boolean(form.enabled)" @change="(e) => (form.enabled = Boolean(e?.detail?.value))" />
+				</u-form-item>
+			</u-form>
+
+			<view class="actions">
+				<u-button type="primary" :loading="saving" :disabled="saving" @click="onSave">保存</u-button>
+				<view class="spacer"></view>
+				<u-button v-if="ruleId && !isSystemTemplate" type="error" plain @click="onDelete">删除</u-button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import { required } from '../../../utils/validator.js'
+	import { useAlertRuleStore } from '../../../stores/alertRule.js'
+
+	const store = useAlertRuleStore()
+	const ruleId = ref('')
+	const saving = ref(false)
+	const isSystemTemplate = ref(false)
+
+	const form = reactive({
+		name: '',
+		description: '',
+		deviceId: '',
+		metric: '',
+		operator: '>',
+		threshold: '',
+		durationSeconds: '60',
+		season: '',
+		conditionType: '',
+		level: 'warning',
+		enabled: true,
+	})
+
+	onLoad(async (options : any) => {
+		ruleId.value = options?.id || ''
+		if (!ruleId.value) return
+		const r : any = await store.fetchDetail(Number(ruleId.value))
+		if (!r) return
+		isSystemTemplate.value = Boolean(r?.isSystemTemplate)
+		form.name = r.name || ''
+		form.description = r.description || ''
+		form.deviceId = r.deviceId || ''
+		form.metric = r.metric || ''
+		form.operator = r.operator || '>'
+		form.threshold = String(r.threshold ?? '')
+		form.durationSeconds = String(r.durationSeconds ?? '60')
+		form.season = r.season || ''
+		form.conditionType = r.conditionType || ''
+		form.level = r.level || 'warning'
+		form.enabled = Boolean(r.enabled)
+	})
+
+	async function onSave() {
+		if (saving.value) return
+		// 系统模板：只允许启用/禁用
+		if (ruleId.value && isSystemTemplate.value) {
+			saving.value = true
+			try {
+				await store.toggle(Number(ruleId.value), Boolean(form.enabled))
+				uni.showToast({ title: '已保存', icon: 'none' })
+				uni.navigateBack()
+			} catch (e) {
+				uni.showToast({ title: '保存失败', icon: 'none' })
+			} finally {
+				saving.value = false
+			}
+			return
+		}
+
+		if (
+			!required(form.name) ||
+			!required(form.metric) ||
+			!required(form.operator) ||
+			!required(form.threshold) ||
+			!required(form.level)
+		) {
+			uni.showToast({ title: '请完整填写表单', icon: 'none' })
+			return
+		}
+		const thresholdNum = Number(form.threshold)
+		if (isNaN(thresholdNum)) {
+			uni.showToast({ title: '阈值必须是数字', icon: 'none' })
+			return
+		}
+		const durationNum = form.durationSeconds ? Number(form.durationSeconds) : 60
+		if (isNaN(durationNum) || durationNum < 0) {
+			uni.showToast({ title: '持续时间必须是非负数字', icon: 'none' })
+			return
+		}
+
+		saving.value = true
+		try {
+			const payload : any = {
+				name: form.name,
+				description: form.description || null,
+				deviceId: form.deviceId || null,
+				metric: form.metric,
+				operator: form.operator,
+				threshold: thresholdNum,
+				durationSeconds: durationNum,
+				season: form.season || null,
+				conditionType: form.conditionType || null,
+				level: form.level,
+				enabled: Boolean(form.enabled),
+			}
+			if (ruleId.value) {
+				await store.update(Number(ruleId.value), payload)
+			} else {
+				await store.create(payload)
+			}
+			uni.showToast({ title: '已保存', icon: 'none' })
+			uni.navigateBack()
+		} catch (e) {
+			uni.showToast({ title: '保存失败', icon: 'none' })
+		} finally {
+			saving.value = false
+		}
+	}
+
+	function onDelete() {
+		uni.showModal({
+			title: '确认删除',
+			content: '删除后不可恢复，确定继续？',
+			success: async (res : any) => {
+				if (!res?.confirm) return
+				try {
+					await store.remove(Number(ruleId.value))
+					uni.showToast({ title: '已删除', icon: 'none' })
+					uni.navigateBack()
+				} catch (e) {
+					uni.showToast({ title: '删除失败', icon: 'none' })
+				}
+			},
+		})
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 14px;
+	}
+
+	.template-tip {
+		margin-bottom: 10px;
+		padding: 10px;
+		border-radius: 10px;
+		background: #fff7e6;
+		color: #ad4e00;
+		font-size: 12px;
+	}
+
+	.actions {
+		margin-top: 12px;
+	}
+
+	.spacer {
+		height: 10px;
+	}
+</style>

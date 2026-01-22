@@ -1,0 +1,127 @@
+<template>
+	<view class="card">
+		<view class="header">
+			<view class="title">{{ title }}</view>
+		</view>
+
+		<view v-if="!alerts || alerts.length === 0" class="empty">
+			<text>暂无告警</text>
+		</view>
+
+		<view v-else class="timeline">
+			<view v-for="a in alerts" :key="a.id" class="item" @click="onItemClick(a)">
+				<view class="dot" :class="levelClass(a.level)"></view>
+				<view class="content">
+					<view class="msg">{{ a.message }}</view>
+					<view class="meta">
+						<text>设备: {{ a.deviceId }}</text>
+						<text class="sep">·</text>
+						<text>{{ a.createdAt || '-' }}</text>
+					</view>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		title: { type: String, default: '告警时间线' },
+		alerts: { type: Array, default: () => [] },
+	})
+
+	const emit = defineEmits(['itemClick'])
+
+	function onItemClick(alert : any) {
+		emit('itemClick', alert)
+	}
+
+	function levelClass(level : string) : string {
+		const l = String(level || '').toLowerCase()
+		if (l === 'critical') return 'critical'
+		if (l === 'warning') return 'warning'
+		if (l === 'info') return 'info'
+		return 'default'
+	}
+</script>
+
+<style lang="scss">
+	.card {
+		background: var(--w-card-bg);
+		border-radius: 14px;
+		padding: 12px;
+	}
+
+	.header {
+		margin-bottom: 10px;
+	}
+
+	.title {
+		font-weight: 600;
+		color: var(--w-text-primary);
+	}
+
+	.empty {
+		color: var(--w-text-secondary);
+		font-size: 12px;
+		padding: 10px 0;
+	}
+
+	.item {
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+		padding: 10px 0;
+		border-top: 1px solid var(--w-border);
+		cursor: pointer;
+	}
+
+	.item:active {
+		background: var(--w-bg);
+	}
+
+	.item:first-child {
+		border-top: 0;
+		padding-top: 0;
+	}
+
+	.dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		margin-top: 4px;
+		background: #9ca3af;
+	}
+
+	.dot.critical {
+		background: var(--w-danger);
+	}
+
+	.dot.warning {
+		background: var(--w-warning);
+	}
+
+	.dot.info {
+		background: var(--w-primary);
+	}
+
+	.content {
+		flex: 1;
+	}
+
+	.msg {
+		font-weight: 600;
+		color: var(--w-text-primary);
+		font-size: 13px;
+	}
+
+	.meta {
+		margin-top: 4px;
+		color: var(--w-text-secondary);
+		font-size: 12px;
+	}
+
+	.sep {
+		margin: 0 6px;
+	}
+</style>

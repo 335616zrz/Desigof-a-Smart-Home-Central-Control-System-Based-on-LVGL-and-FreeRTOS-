@@ -1,0 +1,17 @@
+menu "Weather Client"
+
+config WEATHER_CLIENT_URL
+    string "Weather service URL"
+    default "http://localhost:3334/api/current?city=Beijing"
+    help
+        REST endpoint providing current weather description JSON,
+        expected to return { \"weather\": \"<text>\" }.
+
+config WEATHER_CLIENT_TIMEOUT_MS
+    int "HTTP timeout (ms)"
+    default 5000
+    range 1000 30000
+    help
+        Timeout for weather HTTP requests. Increase if server is remote.
+
+endmenu

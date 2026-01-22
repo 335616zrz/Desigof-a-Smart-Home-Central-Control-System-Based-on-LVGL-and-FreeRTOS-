@@ -1,0 +1,16 @@
+{
+  "navigationBarTitleText": "仪表盘",
+  "usingComponents": {
+    "u-grid-item": "../../uni_modules/uview-plus/components/u-grid-item/u-grid-item",
+    "u-grid": "../../uni_modules/uview-plus/components/u-grid/u-grid",
+    "u-subsection": "../../uni_modules/uview-plus/components/u-subsection/u-subsection",
+    "u-button": "../../uni_modules/uview-plus/components/u-button/u-button",
+    "u-skeleton": "../../uni_modules/uview-plus/components/u-skeleton/u-skeleton",
+    "alert-timeline": "../../components/AlertTimeline/AlertTimeline",
+    "hero-card": "../../components/HeroCard/HeroCard",
+    "online-rate-panel": "../../components/OnlineRatePanel/OnlineRatePanel",
+    "stat-card": "../../components/StatCard/StatCard",
+    "telemetry-line-chart": "../../components/TelemetryLineChart/TelemetryLineChart",
+    "telemetry-table": "../../components/TelemetryTable/TelemetryTable"
+  }
+}

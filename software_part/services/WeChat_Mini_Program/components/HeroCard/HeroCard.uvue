@@ -1,0 +1,69 @@
+<template>
+	<view class="card">
+		<view class="title">{{ title }}</view>
+		<view class="subtitle">{{ subtitle }}</view>
+		<view class="badges">
+			<u-tag :type="mqttTagType" size="mini" plain plainFill :text="mqttTagText" />
+			<u-tag type="info" size="mini" plain plainFill :text="`网络: ${networkText}`" />
+			<u-tag v-if="seasonText" type="warning" size="mini" plain plainFill :text="`季节: ${seasonText}`" />
+			<u-tag v-if="timeText" type="primary" size="mini" plain plainFill :text="timeText" />
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		title: { type: String, default: '指挥中心' },
+		subtitle: { type: String, default: '实时可见 · 可靠可控' },
+		mqtt: { type: String, default: 'unknown' }, // connected | disconnected | unknown
+		network: { type: String, default: 'unknown' },
+		season: { type: String, default: '' },
+		time: { type: String, default: '' },
+	})
+
+	const networkText = computed(() => props.network || 'unknown')
+	const seasonText = computed(() => props.season || '')
+	const timeText = computed(() => props.time || '')
+
+	const mqttTagType = computed(() => {
+		const s = String(props.mqtt || '').toLowerCase()
+		if (s === 'connected') return 'success'
+		if (s === 'disconnected') return 'error'
+		return 'info'
+	})
+
+	const mqttTagText = computed(() => {
+		const s = String(props.mqtt || '').toLowerCase()
+		if (s === 'connected') return 'MQTT: 已连接'
+		if (s === 'disconnected') return 'MQTT: 断开'
+		return 'MQTT: 未知'
+	})
+</script>
+
+<style lang="scss">
+	.card {
+		background: var(--w-card-bg);
+		border-radius: 14px;
+		padding: 14px;
+	}
+
+	.title {
+		font-size: 18px;
+		font-weight: 700;
+		color: var(--w-text-primary);
+	}
+
+	.subtitle {
+		margin-top: 6px;
+		font-size: 12px;
+		color: var(--w-text-secondary);
+	}
+
+	.badges {
+		margin-top: 10px;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+</style>

@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "设备详情",
+  "usingComponents": {
+    "u-input": "../../../uni_modules/uview-plus/components/u-input/u-input",
+    "u-form-item": "../../../uni_modules/uview-plus/components/u-form-item/u-form-item",
+    "u-form": "../../../uni_modules/uview-plus/components/u-form/u-form",
+    "u-button": "../../../uni_modules/uview-plus/components/u-button/u-button",
+    "status-badge": "../../../components/StatusBadge/StatusBadge"
+  }
+}

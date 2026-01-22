@@ -1,0 +1,10 @@
+menu "RTT Ping (CSV)"
+
+config NET_PING_CSV_FLUSH_EACH
+    bool "fflush(stdout) after each CSV line"
+    default n
+    help
+        关闭后只在汇总时 flush，可降低串口 I/O 抖动和 CPU 占用。
+
+endmenu
+

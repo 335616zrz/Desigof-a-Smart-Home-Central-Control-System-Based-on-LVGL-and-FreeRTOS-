@@ -1,0 +1,13 @@
+<template>
+	<u-empty :text="text" mode="data" />
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		text: {
+			type: String,
+			default: '暂无数据',
+		},
+	})
+</script>
+

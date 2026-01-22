@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.MusicTrackMapper">
+
+    <resultMap id="MusicTrackResultMap" type="iot.domain.MusicTrack">
+        <id property="id" column="id" />
+        <result property="title" column="title" />
+        <result property="url" column="url" />
+        <result property="trackIndex" column="track_index" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, title, url, track_index, created_at, updated_at
+    </sql>
+
+    <select id="findAll" resultMap="MusicTrackResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM music_tracks
+        ORDER BY track_index ASC, id ASC
+    </select>
+
+    <select id="findByTitleContaining" resultMap="MusicTrackResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM music_tracks
+        WHERE title LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY track_index ASC, id ASC
+    </select>
+
+    <select id="findById" resultMap="MusicTrackResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM music_tracks
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="iot.domain.MusicTrack" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO music_tracks
+        (title, url, track_index, created_at, updated_at)
+        VALUES
+        (#{title}, #{url}, #{trackIndex}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="iot.domain.MusicTrack">
+        UPDATE music_tracks
+        SET title = #{title},
+            url = #{url},
+            track_index = #{trackIndex},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM music_tracks WHERE id = #{id}
+    </delete>
+</mapper>

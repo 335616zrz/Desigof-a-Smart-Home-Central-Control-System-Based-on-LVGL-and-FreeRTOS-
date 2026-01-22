@@ -1,0 +1,95 @@
+# Build artefacts
+build/
+tools/result/
+*.bin
+*.elf
+*.map
+
+# Local backup of previous git metadata (created during repo migration)
+.git.bak_*/
+
+# ESP-IDF build outputs (project-local)
+software_part/build/
+software_part/main/build/
+
+# ESP-IDF cache/temporary files
+*.log
+sdkconfig
+sdkconfig.old
+.tmp/
+
+# ESP-IDF sensitive configuration (Wi-Fi credentials)
+software_part/sdkconfig.wifi
+sdkconfig.wifi
+
+# Node / Python dependencies
+services/Chatbot/node_modules/
+services/Chatbot/logs/
+services/Chatbot/.venv/
+services/Chatbot/dist/
+services/IoT_cloud_platform/__pycache__/
+services/IoT_cloud_platform/.env
+services/IoT_cloud_platform/backend/target/
+services/IoT_cloud_platform/backend/logs/
+services/IoT_cloud_platform/frontend/node_modules/
+services/IoT_cloud_platform/frontend/dist/
+**/__pycache__/
+
+# Project-local dependency/caches (actual paths)
+software_part/services/Chatbot/node_modules/
+software_part/services/Chatbot/logs/
+software_part/services/Chatbot/.venv*/
+software_part/services/IoT_cloud_platform/frontend/node_modules/
+software_part/services/IoT_cloud_platform/frontend/dist/
+software_part/services/Music_Server/cache/
+software_part/tools/venv/
+
+# Sensitive credentials and API keys (NEVER COMMIT)
+software_part/credentials.json
+services/Chatbot/.env
+services/weather-service/.env
+services/*/.env
+.env
+*.env
+!.env.example
+software_part/sdkconfig
+software_part/services/IoT_cloud_platform/deploy/.env*
+!software_part/services/IoT_cloud_platform/deploy/.env.example
+
+# Large media data (kept outside git)
+# Music files - users should add their own music and run generate_music_index.py
+software_part/services/Music_Server/*.wav
+software_part/services/Music_Server/*.mp3
+software_part/services/Music_Server/*.m4a
+software_part/services/Music_Server/*.flac
+software_part/services/Music_Server/*.aac
+software_part/services/Music_Server/*.ogg
+software_part/services/Music_Server/index.json
+tools/音乐频谱/
+tools/星轨/
+software_part/tools/音乐频谱/
+
+# Certificates / keys (use docs/certs/ for samples)
+*.pem
+*.key
+*.crt
+# Always keep local-only test certs/keys
+software_part/docs/certs/*.crt
+software_part/docs/certs/*.key
+
+# Misc
+.tmpCaddyfile
+*.pcap
+*.bak
+docker-compose.yml.backup
+
+# Project-specific documentation (keep local only)
+TODO.md
+software_part/TODO.md
+software_part/CLAUDE.md
+software_part/docs/语音控制需求文档.md
+
+# Local-only scratch files
+/.tmp_*.png
+/READ.md
+/doc/

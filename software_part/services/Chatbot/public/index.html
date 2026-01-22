@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>实时语音对话助手</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="favicon.ico" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div>
+          <h1>实时语音对话助手</h1>
+          <p class="subtitle">SenseVoice 实时识别 · DeepSeek 快速回复</p>
+        </div>
+        <div id="status-text" class="status-badge">等待连接…</div>
+      </header>
+
+      <main class="app-main">
+        <section class="chat-area">
+          <div id="chat-window" class="chat-window"></div>
+          <form id="text-chat-form" class="text-chat-form" autocomplete="off">
+            <textarea
+              id="text-input"
+              class="text-input"
+              rows="1"
+              maxlength="2048"
+              placeholder="输入文字与助手聊天，按 Enter 发送，Shift+Enter 换行"
+            ></textarea>
+            <button id="send-text-btn" type="submit" class="send-btn primary-btn">发送</button>
+          </form>
+        </section>
+        <aside class="control-panel">
+          <div class="control-group">
+            <label for="language-select">识别语言</label>
+            <select id="language-select">
+              <option value="">自动检测</option>
+              <option value="zh">中文</option>
+              <option value="en">英文</option>
+              <option value="ja">日文</option>
+            </select>
+          </div>
+
+          <div class="control-group control-buttons">
+            <button id="record-btn" class="primary-btn">开始实时对话</button>
+            <button id="stop-btn" class="secondary-btn" disabled>停止录音</button>
+            <button id="stop-tts-btn" class="secondary-btn">停止播报</button>
+            <button id="clear-btn" class="ghost-btn">清空对话</button>
+          </div>
+
+          <div class="hint">
+            <p>提示：</p>
+            <ul>
+              <li>点击“开始实时对话”后，浏览器会请求麦克风权限。</li>
+              <li>识别文本和助手回复会同步流式显示。</li>
+              <li>如需中断当前轮对话，可点击“停止录音”。</li>
+              <li>你也可以直接在聊天记录下方的输入框中键入文字与助手对话。</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+    <!-- WebSocket 端点可在 ws-config.js 中按需覆盖，避免内联脚本触发 CSP -->
+    <script src="ws-config.js" defer></script>
+    <script src="script.js" defer></script>
+  </body>
+</html>

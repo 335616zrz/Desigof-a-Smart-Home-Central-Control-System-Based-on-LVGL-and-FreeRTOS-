@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="iot.mapper.AlertRuleMapper">
+
+    <resultMap id="AlertRuleResultMap" type="iot.domain.AlertRule">
+        <id property="id" column="id" />
+        <result property="name" column="name" />
+        <result property="description" column="description" />
+        <result property="deviceId" column="device_id" />
+        <result property="metric" column="metric" />
+        <result property="operator" column="operator" />
+        <result property="threshold" column="threshold" />
+        <result property="durationSeconds" column="duration_seconds" />
+        <result property="level" column="level" />
+        <result property="enabled" column="enabled" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="season" column="season" />
+        <result property="isSystemTemplate" column="is_system_template" />
+        <result property="conditionType" column="condition_type" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, device_id, metric, operator, threshold, duration_seconds, level, enabled, created_at, updated_at,
+        season, is_system_template, condition_type
+    </sql>
+
+    <select id="findAll" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        <where>
+            <if test="enabled != null">
+                AND enabled = #{enabled}
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="findByDeviceId" parameterType="string" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        WHERE device_id = #{deviceId} OR device_id IS NULL
+        ORDER BY id DESC
+    </select>
+
+    <select id="findEnabledRules" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        WHERE enabled = TRUE
+        ORDER BY id ASC
+    </select>
+
+    <insert id="insert" parameterType="iot.domain.AlertRule" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO alert_rules
+        (name, description, device_id, metric, operator, threshold, duration_seconds, level, enabled, created_at, updated_at,
+         season, is_system_template, condition_type)
+        VALUES
+        (#{name}, #{description}, #{deviceId}, #{metric}, #{operator}, #{threshold}, #{durationSeconds}, #{level}, #{enabled}, #{createdAt}, #{updatedAt},
+         #{season}, #{isSystemTemplate}, #{conditionType})
+    </insert>
+
+    <update id="update" parameterType="iot.domain.AlertRule">
+        UPDATE alert_rules
+        SET name = #{name},
+            description = #{description},
+            device_id = #{deviceId},
+            metric = #{metric},
+            operator = #{operator},
+            threshold = #{threshold},
+            duration_seconds = #{durationSeconds},
+            level = #{level},
+            enabled = #{enabled},
+            season = #{season},
+            is_system_template = #{isSystemTemplate},
+            condition_type = #{conditionType},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateEnabled">
+        UPDATE alert_rules
+        SET enabled = #{enabled}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM alert_rules WHERE id = #{id}
+    </delete>
+
+    <select id="findActiveRulesBySeason" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        <where>
+            <if test="enabled != null">
+                AND enabled = #{enabled}
+            </if>
+            AND (season = #{season} OR season IS NULL)
+        </where>
+        ORDER BY is_system_template DESC, id ASC
+    </select>
+
+    <select id="findSystemTemplates" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        <where>
+            AND is_system_template = TRUE
+            <if test="season != null and season != ''">
+                AND season = #{season}
+            </if>
+        </where>
+        ORDER BY id ASC
+    </select>
+
+    <select id="findUserRules" resultMap="AlertRuleResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM alert_rules
+        <where>
+            AND (is_system_template = FALSE OR is_system_template IS NULL)
+            <if test="deviceId != null and deviceId != ''">
+                AND (device_id = #{deviceId} OR device_id IS NULL)
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+    <delete id="deleteByIdIfNotSystem">
+        DELETE FROM alert_rules
+        WHERE id = #{id} AND (is_system_template = FALSE OR is_system_template IS NULL)
+    </delete>
+</mapper>

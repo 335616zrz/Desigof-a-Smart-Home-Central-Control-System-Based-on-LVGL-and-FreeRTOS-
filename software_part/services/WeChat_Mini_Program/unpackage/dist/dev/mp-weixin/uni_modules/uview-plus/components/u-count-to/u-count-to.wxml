@@ -1,0 +1,1 @@
+<text style="{{'font-size:' + c + ';' + ('font-weight:' + d) + ';' + ('color:' + e) + ';' + (virtualHostStyle || '')}}" id="{{b}}" change:eS="{{uV.sS}}" eS="{{$eS[b]}}" change:eA="{{uV.sA}}" eA="{{$eA[b]}}" class="{{['u-count-num', 'data-v-eb411063', virtualHostClass]}}" hidden="{{virtualHostHidden || false}}">{{a}}</text><wxs src="/common/uniView.wxs" module="uV"/>

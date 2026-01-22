@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "u-circle-progress": "../../uni_modules/uview-plus/components/u-circle-progress/u-circle-progress"
+  }
+}

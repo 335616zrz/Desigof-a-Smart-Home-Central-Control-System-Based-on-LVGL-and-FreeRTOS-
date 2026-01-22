@@ -1,0 +1,14 @@
+idf_component_register(
+    SRCS
+        "voice_afe.c"
+    INCLUDE_DIRS
+        "include"
+    REQUIRES
+        esp_event
+        esp_timer
+        drivers_inmp441
+        espressif__esp-sr
+        espressif__gmf_ai_audio
+    PRIV_REQUIRES
+        freertos
+)

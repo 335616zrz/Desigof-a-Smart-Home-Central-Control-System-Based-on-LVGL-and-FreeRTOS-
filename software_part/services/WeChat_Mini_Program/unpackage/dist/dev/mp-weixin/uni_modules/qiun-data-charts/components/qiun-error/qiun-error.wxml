@@ -1,0 +1,1 @@
+<view id="{{b}}" change:eS="{{uV.sS}}" eS="{{$eS[b]}}" change:eA="{{uV.sA}}" eA="{{$eA[b]}}" class="{{['chartsview', virtualHostClass]}}" style="{{virtualHostStyle}}" hidden="{{virtualHostHidden || false}}"><view class="charts-error"></view><view class="charts-font">{{a}}</view></view><wxs src="/common/uniView.wxs" module="uV"/>

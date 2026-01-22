@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "系统设置",
+  "usingComponents": {
+    "u-button": "../../uni_modules/uview-plus/components/u-button/u-button"
+  }
+}

@@ -1,0 +1,192 @@
+menu "WS2812 Night Light / Alarm Options"
+
+config APP_WS2812_ENABLE
+    bool "Enable WS2812 night light & alarm task"
+    default y
+    help
+        When enabled, creates the WS2812 task for night light and alarm indicator.
+        Disable this to test if it causes DMA/heap issues (A/B testing).
+
+config APP_WS2812_USE_PSRAM_STACK
+    bool "Allocate WS2812 task stack from PSRAM"
+    depends on APP_WS2812_ENABLE && SPIRAM
+    default y
+    help
+        When enabled, the WS2812 task stack is statically allocated from PSRAM
+        instead of internal heap, reducing DMA-capable memory fragmentation.
+
+config APP_WS2812_LIGHTWEIGHT_JSON
+    bool "Use lightweight JSON parser (no cJSON)"
+    depends on APP_WS2812_ENABLE
+    default y
+    help
+        When enabled, use a minimal hand-rolled JSON parser instead of cJSON
+        to avoid malloc/free fragmentation during MQTT message handling.
+
+endmenu
+
+menu "Application Task Stack Configuration"
+
+config APP_MUSIC_USE_PSRAM_STACK
+    bool "Use PSRAM for music_task stack"
+    default y
+    depends on SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    help
+        Allocate music_task stack (6KB) in PSRAM to save internal RAM.
+
+config APP_ENV_SHT40_USE_PSRAM_STACK
+    bool "Use PSRAM for env_sht40 task stack"
+    default y
+    depends on SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    help
+        Allocate env_sht40 task stack (3KB) in PSRAM to save internal RAM.
+
+endmenu
+
+menu "Music Services Options"
+
+config APP_ENABLE_MUSIC
+    bool "Enable music playback task"
+    default n
+    help
+        When enabled, app_main creates the music playback FreeRTOS task.
+        Disable if you only need the UI without audio streaming.
+
+config APP_MUSIC_HOST_IP
+    string "Music source host/IP"
+    default "servers.local"
+    help
+        Hostname or IP address of the LAN HTTPS server that serves audio files.
+        When using the bundled mDNS workflow, keep this as "music-server.local".
+
+config APP_MUSIC_BASE_URL
+    string "Music base URL (with trailing slash)"
+    default "https://servers.local/"
+    help
+        Base URL used to build full track URLs. Include the scheme and trailing slash.
+
+config APP_MUSIC_DEFAULT_TRACK
+    string "Default track filename"
+    default "028 青花瓷(粤语版).wav"
+    help
+        UTF-8 file name of the default track to play during startup when the
+        music task is enabled.
+
+config APP_MUSIC_INDEX_URL
+    string "Music index JSON URL"
+    default "https://servers.local/index.json"
+    help
+        HTTPS URL returning the index.json payload consumed by the music UI list.
+
+config APP_MUSIC_SKIP_CN_CHECK
+    bool "Skip TLS Common-Name check for music HTTPS stream (development only)"
+    default n
+    help
+        When enabled, the HTTPS client used by the music index/player will skip
+        verifying the server certificate's Common Name. This is useful when the
+        music server presents a certificate whose CN/SAN does not match the LAN
+        host name (e.g. accessed via raw IP). Disable this in production.
+
+endmenu
+
+menu "OTA Options"
+
+config APP_OTA_ENABLE
+    bool "Enable HTTPS OTA update"
+    default n
+    help
+        Enable firmware update over the network using esp_https_ota.
+        Requires partition table to include: otadata + ota_0 + ota_1.
+
+config APP_OTA_AUTO_START
+    bool "Auto check OTA on boot (dev)"
+    depends on APP_OTA_ENABLE
+    default n
+    help
+        If enabled, the device will check for a new firmware after Wi-Fi gets IP.
+        If a new version is found, the UI can auto-pop a dialog; the actual OTA
+        upgrade starts only after the user clicks "确认".
+
+config APP_OTA_URL
+    string "Firmware image URL"
+    depends on APP_OTA_ENABLE
+    default "https://servers.local/firmware"
+    help
+        HTTPS URL of the new app image.
+
+        Notes for this repo's default LAN server (servers.local):
+        - The current Caddy rules deny some "sensitive" extensions (including .bin).
+          Serving the firmware under an extension-less name (e.g. /firmware)
+          avoids a 403 Forbidden.
+
+config APP_OTA_ALLOW_SAME_VERSION
+    bool "Allow updating to the same version"
+    depends on APP_OTA_ENABLE
+    default n
+    help
+        If disabled (recommended), OTA will be skipped when the downloaded image
+        version matches the currently running app version. This avoids an OTA
+        ping-pong loop when Auto start OTA on boot is enabled.
+
+config APP_OTA_SKIP_CN_CHECK
+    bool "Skip TLS common-name check (dev only)"
+    depends on APP_OTA_ENABLE
+    default n
+    help
+        Keeps certificate chain validation but skips host name (CN/SAN) match.
+        Only enable on trusted LAN during development.
+
+config APP_OTA_TLS_INSECURE
+    bool "INSECURE: accept any certificate (dev only)"
+    depends on APP_OTA_ENABLE
+    default n
+    help
+        If enabled, the OTA client will not validate the server certificate
+        chain. DO NOT enable for production.
+
+config APP_OTA_HTTP_TIMEOUT_MS
+    int "HTTP timeout (ms)"
+    depends on APP_OTA_ENABLE
+    default 15000
+    range 1000 120000
+
+config APP_OTA_HTTP_RX_BUFFER_SIZE
+    int "HTTP RX buffer size (bytes)"
+    depends on APP_OTA_ENABLE
+    default 16384
+    range 1024 65536
+    help
+        Size of the HTTP receive buffer used during OTA download.
+
+        Larger values can significantly improve OTA throughput (fewer read loops),
+        at the cost of additional heap usage.
+
+config APP_OTA_LOOP_DELAY_MS
+    int "Delay between esp_https_ota_perform() loops (ms, 0=yield)"
+    depends on APP_OTA_ENABLE
+    default 0
+    range 0 1000
+    help
+        Adds a delay/yield after each esp_https_ota_perform() call while the OTA
+        is in progress.
+
+        Set to 0 to only yield (fastest). Non-zero values may reduce impact on
+        other tasks but can make OTA much slower.
+
+config APP_OTA_BULK_FLASH_ERASE
+    bool "Bulk erase OTA partition (faster, may trigger WDT)"
+    depends on APP_OTA_ENABLE
+    default n
+    help
+        When enabled, erase the whole OTA partition at once before writing.
+        Can be faster but may require a higher task watchdog timeout.
+
+config APP_OTA_BUFFER_CAPS_INTERNAL
+    bool "Allocate OTA buffer from internal RAM"
+    depends on APP_OTA_ENABLE
+    default n
+    help
+        When PSRAM is enabled, allocating OTA buffers from internal RAM may
+        improve throughput and stability.
+
+endmenu

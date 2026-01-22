@@ -1,0 +1,100 @@
+<template>
+	<view class="card">
+		<view class="header">
+			<view class="title">{{ title }}</view>
+		</view>
+
+		<view class="table">
+			<view class="tr th">
+				<text class="td device">设备</text>
+				<text class="td num">温度</text>
+				<text class="td num">湿度</text>
+				<text class="td num">气压</text>
+			</view>
+
+			<view v-for="r in rows" :key="r.deviceId" class="tr">
+				<text class="td device">{{ r.deviceId }}</text>
+				<text class="td num">{{ format(r.temperature) }}</text>
+				<text class="td num">{{ format(r.humidity) }}</text>
+				<text class="td num">{{ format(r.pressure) }}</text>
+			</view>
+
+			<view v-if="!rows || rows.length === 0" class="empty">
+				<text>暂无数据</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		title: { type: String, default: '遥测数据' },
+		rows: { type: Array, default: () => [] }, // [{deviceId, temperature, humidity, pressure, reportedAt, timestamp}]
+	})
+
+	function format(v : any) : string {
+		if (v === null || v === undefined) return '-'
+		const n = Number(v)
+		if (isNaN(n)) return '-'
+		return String(n)
+	}
+</script>
+
+<style lang="scss">
+	.card {
+		background: var(--w-card-bg);
+		border-radius: 14px;
+		padding: 12px;
+	}
+
+	.header {
+		margin-bottom: 10px;
+	}
+
+	.title {
+		font-weight: 600;
+		color: var(--w-text-primary);
+	}
+
+	.table {
+		border: 1px solid var(--w-border);
+		border-radius: 12px;
+		overflow: hidden;
+	}
+
+	.tr {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 10px 8px;
+		border-top: 1px solid var(--w-border);
+	}
+
+	.tr:first-child {
+		border-top: 0;
+	}
+
+	.th {
+		background: var(--w-bg);
+	}
+
+	.td {
+		font-size: 12px;
+		color: var(--w-text-primary);
+	}
+
+	.device {
+		flex: 1.4;
+	}
+
+	.num {
+		flex: 1;
+		text-align: right;
+	}
+
+	.empty {
+		padding: 12px;
+		color: var(--w-text-secondary);
+		font-size: 12px;
+	}
+</style>

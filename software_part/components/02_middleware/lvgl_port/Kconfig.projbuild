@@ -1,0 +1,14 @@
+menu "LVGL extra options"
+    config LV_COLOR_16_SWAP
+        bool "Swap the 2 bytes of RGB565 color"
+        default n
+
+    config LVGL_PORT_EXTRA_MEM_KB
+        int "Extra LVGL heap size (KB)"
+        default 128 if SPIRAM
+        default 0
+        range 0 512
+        help
+            Allocate an additional TLSF pool for LVGL on top of CONFIG_LV_MEM_SIZE_KILOBYTES.
+            Set to 0 to disable. When SPIRAM is present we default to 128 KB.
+endmenu

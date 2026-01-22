@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "u-empty": "../../uni_modules/uview-plus/components/u-empty/u-empty"
+  }
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>天气查询 · 示例站点</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="/assets/icon-192.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#58b7ff">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1220">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="stylesheet" href="/css/styles.css">
+  </head>
+<body class="panel-480x320">
+  <main>
+    <section class="toolbar">
+      <form id="query-form" class="query">
+        <div class="selectors">
+          <select id="sel-province" aria-label="选择省份"></select>
+          <select id="sel-city" aria-label="选择城市" disabled></select>
+          <select id="sel-county" aria-label="选择区县" disabled></select>
+          <button type="submit" class="primary">查询</button>
+        </div>
+      </form>
+      <div id="notice" class="notice" hidden></div>
+    </section>
+
+    <section class="hero" id="hero">
+      <div class="hero-top">
+        <div class="location">
+          <svg class="icon"><use href="/assets/icons.svg#location"></use></svg>
+          <span id="hero-city">—</span>
+        </div>
+        <div class="update" id="hero-update">—</div>
+      </div>
+      <div class="hero-main">
+        <div class="temp" id="hero-temp">--</div>
+        <div class="state">
+          <svg class="icon big" id="hero-icon"><use href="/assets/icons.svg#cloud"></use></svg>
+          <div class="text" id="hero-weather">—</div>
+        </div>
+      </div>
+      <div class="chips" id="hero-chips"></div>
+    </section>
+
+    <section class="cards" id="forecast">
+      <h2 class="section-title">未来预报</h2>
+      <div class="scroll" id="forecast-cards"></div>
+    </section>
+
+    <section class="rawbox">
+      <details>
+        <summary>原始返回 JSON（调试用）</summary>
+        <pre id="raw" class="raw"></pre>
+      </details>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>最后更新时间：2025-03-18 · 示例站点</span></footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

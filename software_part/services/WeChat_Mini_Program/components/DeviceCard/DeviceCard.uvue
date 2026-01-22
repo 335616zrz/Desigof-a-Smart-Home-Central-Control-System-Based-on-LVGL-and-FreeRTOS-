@@ -1,0 +1,56 @@
+<template>
+	<view class="card" @click="onClick">
+		<view class="row">
+			<view class="name">{{ device?.name || '-' }}</view>
+			<StatusBadge :status="device?.status || ''" />
+		</view>
+		<view class="meta">设备ID：{{ device?.deviceId || '-' }}</view>
+		<view class="meta">固件：{{ device?.firmwareVersion || '-' }}</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import StatusBadge from '../StatusBadge/StatusBadge.uvue'
+
+	const props = defineProps({
+		device: {
+			type: Object,
+			default: null,
+		},
+	})
+
+	const emit = defineEmits(['click'])
+
+	function onClick() {
+		emit('click', props.device)
+	}
+</script>
+
+<style lang="scss">
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 14px 14px;
+		margin-bottom: 12px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.name {
+		font-size: 16px;
+		font-weight: 600;
+		color: #111;
+	}
+
+	.meta {
+		margin-top: 6px;
+		color: #666;
+		font-size: 12px;
+	}
+</style>
+

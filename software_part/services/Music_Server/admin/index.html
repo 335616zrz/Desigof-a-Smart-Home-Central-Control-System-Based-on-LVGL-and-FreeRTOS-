@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>音乐服务管理台</title>
+    <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+    <header class="app-header">
+        <h1>音乐服务管理台</h1>
+        <div class="status" id="status"></div>
+    </header>
+
+    <section class="controls">
+        <input id="search" type="search" placeholder="搜索曲目、关键字…" autocomplete="off" />
+        <div class="actions">
+            <button id="reload">重新加载</button>
+            <label class="toggle">
+                <input id="showDuplicates" type="checkbox" />
+                <span>显示重复文件</span>
+            </label>
+        </div>
+    </section>
+
+    <main class="layout">
+        <aside class="sidebar">
+            <h2>概览</h2>
+            <ul>
+                <li>曲目总数：<strong id="totalCount">0</strong></li>
+                <li>筛选结果：<strong id="filteredCount">0</strong></li>
+                <li>重复标题：<strong id="duplicateCount">0</strong></li>
+            </ul>
+            <section class="help">
+                <h3>快速操作</h3>
+                <p>• 双击条目可立即播放或暂停。</p>
+                <p>• 使用下载按钮触发强制下载。</p>
+                <p>• 可复制直链分享给播放终端。</p>
+            </section>
+        </aside>
+
+        <section class="content">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-sort="title">曲目</th>
+                        <th>格式</th>
+                        <th data-sort="index">序号</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="entries"></tbody>
+            </table>
+        </section>
+
+        <section class="player">
+            <h2>预览播放</h2>
+            <p id="currentTitle">未选择曲目</p>
+            <audio id="audio" controls preload="none"></audio>
+            <div class="visualizer-shell">
+                <canvas id="visualizer"></canvas>
+            </div>
+        </section>
+
+        <section class="audit">
+            <div class="audit-header">
+                <h2>访问监控</h2>
+                <div class="audit-actions">
+                    <button id="refreshLogs" type="button">刷新</button>
+                    <span class="audit-meta" id="logMeta">初始化…</span>
+                </div>
+            </div>
+            <div class="audit-summary">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP</th>
+                            <th>用户</th>
+                            <th>访问</th>
+                            <th>下载</th>
+                            <th>最近请求</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ipSummary"></tbody>
+                </table>
+            </div>
+            <div class="audit-stream">
+                <h3>最近事件</h3>
+                <ul id="logStream"></ul>
+            </div>
+        </section>
+    </main>
+
+    <template id="row-template">
+        <tr>
+            <td class="title">
+                <span class="label"></span>
+                <span class="badge duplicate" title="重复标题">重复</span>
+            </td>
+            <td class="format"></td>
+            <td class="index"></td>
+            <td class="actions">
+                <button class="play" type="button">播放</button>
+                <button class="copy" type="button">复制链接</button>
+                <a class="download" target="_blank" rel="noopener" href="#">下载</a>
+            </td>
+        </tr>
+    </template>
+
+    <script src="./app.js" type="module"></script>
+</body>
+</html>

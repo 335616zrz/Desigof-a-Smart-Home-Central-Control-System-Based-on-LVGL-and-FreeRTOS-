@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "图表测试",
+  "usingComponents": {
+    "mrsong-charts": "../../uni_modules/mrsong-charts/components/mrsong-charts/mrsong-charts",
+    "telemetry-line-chart": "../../components/TelemetryLineChart/TelemetryLineChart"
+  }
+}

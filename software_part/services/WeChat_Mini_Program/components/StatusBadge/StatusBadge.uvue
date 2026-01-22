@@ -1,0 +1,60 @@
+<template>
+	<view :class="['badge', colorClass]">{{ text }}</view>
+</template>
+
+<script setup lang="uts">
+	const props = defineProps({
+		status: {
+			type: String,
+			default: '',
+		},
+	})
+
+	const normalized = computed(() => String(props.status || '').toUpperCase())
+
+	const text = computed(() => {
+		const s = normalized.value
+		if (s === 'ONLINE' || s === 'AUTHENTICATED') return '在线'
+		if (s === 'OFFLINE') return '离线'
+		if (s === 'PROVISIONING') return '待配网'
+		return '未知'
+	})
+
+	const colorClass = computed(() => {
+		const s = normalized.value
+		if (s === 'ONLINE' || s === 'AUTHENTICATED') return 'ok'
+		if (s === 'OFFLINE') return 'off'
+		if (s === 'PROVISIONING') return 'warn'
+		return 'unknown'
+	})
+</script>
+
+<style lang="scss">
+	.badge {
+		padding: 2px 8px;
+		border-radius: 999px;
+		font-size: 12px;
+		line-height: 18px;
+	}
+
+	.ok {
+		background: #e8f5e9;
+		color: #2e7d32;
+	}
+
+	.off {
+		background: #f2f3f5;
+		color: #666;
+	}
+
+	.warn {
+		background: #fff7e6;
+		color: #ad6800;
+	}
+
+	.unknown {
+		background: #f2f3f5;
+		color: #666;
+	}
+</style>
+

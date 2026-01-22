@@ -1,0 +1,140 @@
+<template>
+	<view class="page">
+		<view class="header">
+			<u-button size="mini" @click="pickDevice">{{ deviceLabel }}</u-button>
+			<u-button type="primary" size="mini" :loading="loading" @click="refresh">刷新</u-button>
+		</view>
+
+		<view class="charts">
+			<TelemetryLineChart
+				title="温度趋势"
+				:data="chartSeries"
+				field="temperature"
+				canvasId="telemetryHistoryTempChart"
+				:interactive="true"
+			/>
+			<TelemetryLineChart
+				title="湿度趋势"
+				:data="chartSeries"
+				field="humidity"
+				canvasId="telemetryHistoryHumidityChart"
+				:interactive="true"
+			/>
+		</view>
+
+		<view class="list">
+			<view v-for="r in records" :key="r.id" class="item">
+				<view class="row">
+					<text class="time">{{ r.reportedAt || '-' }}</text>
+				</view>
+				<text class="payload">{{ r.payload || '' }}</text>
+			</view>
+			<u-empty v-if="!loading && records.length === 0" text="暂无遥测数据" mode="data" />
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import TelemetryLineChart from '../../../components/TelemetryLineChart/TelemetryLineChart.uvue'
+	import { useDeviceStore } from '../../../stores/device.js'
+	import { useTelemetryStore } from '../../../stores/telemetry.js'
+
+	const deviceStore = useDeviceStore()
+	const store = useTelemetryStore()
+
+	const selectedDeviceId = ref('')
+
+	const loading = computed(() => Boolean(store.loading))
+	const records = computed(() => store.history || [])
+	const chartSeries = computed(() => (store.parsedHistory as any[]) || [])
+
+	const deviceLabel = computed(() => {
+		if (!selectedDeviceId.value) return '全部设备'
+		const d : any = (deviceStore.items || []).find((x : any) => x?.deviceId === selectedDeviceId.value)
+		return d?.name ? `${d.name}` : selectedDeviceId.value
+	})
+
+	onShow(async () => {
+		if (!deviceStore.items || deviceStore.items.length === 0) {
+			await deviceStore.fetchList()
+		}
+		// Default: show all devices latest telemetry.
+		await refresh()
+	})
+
+	async function refresh() {
+		await store.fetchHistory({
+			deviceId: selectedDeviceId.value,
+			// Increase points a bit so the history charts are meaningful.
+			pageSize: 500,
+			page: 1,
+		})
+	}
+
+	function pickDevice() {
+		const items : any[] = [{ id: '', name: '全部设备' }]
+		;(deviceStore.items || []).forEach((d : any) => {
+			items.push({ id: d?.deviceId || '', name: d?.name || d?.deviceId || '' })
+		})
+
+		uni.showActionSheet({
+			itemList: items.map((x : any) => x.name),
+			success: (res : any) => {
+				const idx = res?.tapIndex ?? -1
+				if (idx < 0) return
+				selectedDeviceId.value = items[idx].id
+				refresh()
+			},
+		})
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.header {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+
+	.charts {
+		margin-bottom: 12px;
+	}
+
+	.list {
+		margin-top: 12px;
+	}
+
+	.item {
+		background: #fff;
+		border-radius: 12px;
+		padding: 12px;
+		margin-bottom: 10px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.time {
+		color: #666;
+		font-size: 12px;
+	}
+
+	.payload {
+		display: block;
+		margin-top: 8px;
+		color: #111;
+		font-size: 12px;
+		word-break: break-all;
+	}
+</style>

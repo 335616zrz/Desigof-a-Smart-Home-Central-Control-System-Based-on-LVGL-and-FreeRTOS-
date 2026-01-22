@@ -1,0 +1,28 @@
+menu "Wi-Fi Scan (CSV)"
+
+config NET_WIFI_SCAN_ON_BOOT
+    bool "Run one Wi-Fi scan after connected"
+    default n
+
+config NET_WIFI_SCAN_SHOW_HIDDEN
+    bool "Show hidden SSIDs"
+    default y
+
+config NET_WIFI_SCAN_ACTIVE_MIN_MS
+    int "Active scan dwell min (ms)"
+    range 0 500
+    default 100
+
+config NET_WIFI_SCAN_ACTIVE_MAX_MS
+    int "Active scan dwell max (ms)"
+    range 0 1000
+    default 300
+
+config NET_WIFI_SCAN_USE_PSRAM
+    bool "Allocate scan records in PSRAM when available"
+    default y
+    help
+        大量 AP 结果（>100）时优先使用 PSRAM，避免内存高峰占用内部 RAM。
+
+endmenu
+

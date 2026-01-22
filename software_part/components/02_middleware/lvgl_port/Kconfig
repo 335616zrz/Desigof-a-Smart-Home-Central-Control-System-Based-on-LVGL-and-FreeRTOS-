@@ -1,0 +1,25 @@
+menu "LVGL Port"
+
+config LVGL_PORT_TASK_STACK_SIZE
+    int "LVGL task stack size (bytes)"
+    range 4096 65536
+    default 16384
+    help
+      LVGL 后台任务栈大小。GUI Guider 生成的界面建议 >= 16 KB。
+
+config LVGL_PORT_BUF_LINES
+    int "LVGL partial buffer lines"
+    range 10 200
+    default 40
+    help
+      LVGL 局部渲染缓冲的行数。数值越大，刷屏吞吐越高，内存占用也越高。
+
+config LVGL_PORT_TICK_MS
+    int "LVGL handler period (ms)"
+    range 1 20
+    default 5
+    help
+      lv_timer_handler() 调用周期（毫秒）。
+
+endmenu
+

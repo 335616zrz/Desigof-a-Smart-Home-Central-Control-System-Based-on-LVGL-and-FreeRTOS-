@@ -1,0 +1,279 @@
+<template>
+	<view class="page">
+		<view class="card">
+			<view class="row">
+				<view class="title">{{ device?.name || '-' }}</view>
+				<StatusBadge :status="device?.status || ''" />
+			</view>
+
+			<view class="meta">设备ID：{{ device?.deviceId || '-' }}</view>
+			<view class="meta">最后在线：{{ device?.lastSeenAt || '-' }}</view>
+
+			<view class="divider"></view>
+
+			<u-form :model="editForm">
+				<u-form-item label="名称" labelWidth="72">
+					<u-input v-model="editForm.name" placeholder="设备名称" clearable />
+				</u-form-item>
+				<u-form-item label="固件" labelWidth="72">
+					<u-input v-model="editForm.firmwareVersion" placeholder="固件版本" clearable />
+				</u-form-item>
+				<u-form-item label="夜灯" labelWidth="72">
+					<view style="display:flex; flex-direction:column; align-items:flex-end; width:100%;">
+						<u-switch v-model="nightLightOn" :disabled="nightLightLoading" @change="onNightLightChange" />
+						<view v-if="shadowHint" class="hint">{{ shadowHint }}</view>
+					</view>
+				</u-form-item>
+			</u-form>
+
+			<view class="actions">
+				<u-button type="primary" :loading="saving" :disabled="saving" @click="onSave">保存</u-button>
+				<view class="spacer"></view>
+				<u-button v-if="canDelete" type="error" plain @click="onDelete">删除设备</u-button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="uts">
+	import StatusBadge from '../../../components/StatusBadge/StatusBadge.uvue'
+	import { ROUTES } from '../../../common/constants.js'
+	import { isAdmin } from '../../../utils/permission.js'
+	import { useAuthStore } from '../../../stores/auth.js'
+	import { useDeviceStore } from '../../../stores/device.js'
+	import { required } from '../../../utils/validator.js'
+	import { getDeviceShadow, setNightLight } from '../../../api/device.js'
+
+	const auth = useAuthStore()
+	const store = useDeviceStore()
+
+	const deviceId = ref('')
+	const device = computed(() => store.current)
+
+	const saving = ref(false)
+	const nightLightLoading = ref(false)
+	const nightLightOn = ref(false)
+	const shadow = ref<any | null>(null)
+	const shadowLoading = ref(false)
+	const editForm = reactive({
+		name: '',
+		firmwareVersion: '',
+	})
+
+	const canDelete = computed(() => isAdmin(auth.user))
+	const shadowHint = computed(() => {
+		const s : any = shadow.value
+		if (!s) return ''
+		const pending = Boolean((s as any).nightLightPending)
+		const desired = (s as any).desiredNightLightOn
+		const reported = (s as any).reportedNightLightOn
+		const src = String((s as any).nightLightSource || '')
+
+		const boolText = (v : any) => {
+			if (v === null || v === undefined) return '未知'
+			return Boolean(v) ? '开' : '关'
+		}
+		const srcText = () => {
+			if (src === 'reported') return '设备回执'
+			if (src === 'desired') return '云端期望'
+			if (src === 'default') return '默认'
+			return src || '未知'
+		}
+		return `${pending ? '等待回执' : '已同步'}（云端:${boolText(desired)} 回执:${boolText(reported)} 来源:${srcText()}）`
+	})
+
+	let shadowTimer : any = null
+	let deviceTimer : any = null
+
+	function unwrap(resp : any) : any {
+		// Backend returns ApiResponse {code,message,data}; keep compatible with raw responses.
+		return (resp as any)?.data ?? resp ?? null
+	}
+
+	async function syncShadowOnce() {
+		if (!deviceId.value) return
+		if (shadowLoading.value) return
+		shadowLoading.value = true
+		try {
+			const resp : any = await getDeviceShadow(deviceId.value)
+			const data : any = unwrap(resp)
+			shadow.value = data
+
+			// Keep switch consistent across multi-user operations:
+			// - prefer desired (cloud intent) if present
+			// - otherwise fall back to effective state
+			if (!nightLightLoading.value) {
+				const desired = (data as any)?.desiredNightLightOn
+				if (desired !== null && desired !== undefined) {
+					nightLightOn.value = Boolean(desired)
+				} else if ((data as any) && (data as any).nightLightOn !== undefined) {
+					nightLightOn.value = Boolean((data as any).nightLightOn)
+				}
+			}
+		} catch (e) {
+			// ignore polling errors (network changes / backend restarting)
+		} finally {
+			shadowLoading.value = false
+		}
+	}
+
+	async function syncDeviceOnce() {
+		if (!deviceId.value) return
+		try {
+			// Only refresh store.current; do NOT override editForm to avoid wiping unsaved user inputs.
+			await store.fetchDetail(deviceId.value)
+		} catch (e) {}
+	}
+
+	function startPolling() {
+		stopPolling()
+		shadowTimer = setInterval(() => {
+			syncShadowOnce()
+		}, 1500)
+		deviceTimer = setInterval(() => {
+			syncDeviceOnce()
+		}, 5000)
+	}
+
+	function stopPolling() {
+		if (shadowTimer) {
+			clearInterval(shadowTimer)
+			shadowTimer = null
+		}
+		if (deviceTimer) {
+			clearInterval(deviceTimer)
+			deviceTimer = null
+		}
+	}
+
+	onLoad((options : any) => {
+		deviceId.value = options?.deviceId || ''
+	})
+
+	onShow(async () => {
+		if (!deviceId.value) return
+		const data : any = await store.fetchDetail(deviceId.value)
+		editForm.name = data?.name || ''
+		editForm.firmwareVersion = data?.firmwareVersion || ''
+		await syncShadowOnce()
+		startPolling()
+	})
+
+	onHide(() => {
+		stopPolling()
+	})
+
+	onUnload(() => {
+		stopPolling()
+	})
+
+	async function onSave() {
+		if (saving.value) return
+		if (!required(editForm.name)) {
+			uni.showToast({ title: '名称不能为空', icon: 'none' })
+			return
+		}
+		saving.value = true
+		try {
+			await store.update(deviceId.value, {
+				name: editForm.name,
+				firmwareVersion: editForm.firmwareVersion,
+			})
+			uni.showToast({ title: '已保存', icon: 'none' })
+			await store.fetchDetail(deviceId.value)
+		} catch (e) {
+			uni.showToast({ title: '保存失败', icon: 'none' })
+		} finally {
+			saving.value = false
+		}
+	}
+
+	function onDelete() {
+		uni.showModal({
+			title: '确认删除',
+			content: '删除后不可恢复，确定继续？',
+			success: async (res : any) => {
+				if (!res?.confirm) return
+				try {
+					await store.remove(deviceId.value)
+					uni.showToast({ title: '已删除', icon: 'none' })
+					uni.navigateBack()
+				} catch (e) {
+					uni.showToast({ title: '删除失败', icon: 'none' })
+				}
+			},
+		})
+	}
+
+	async function onNightLightChange(val : any) {
+		// u-switch change event may provide boolean or number; normalize.
+		const on = Boolean(val)
+		if (!deviceId.value) return
+		if (nightLightLoading.value) return
+		nightLightLoading.value = true
+		try {
+			await setNightLight(deviceId.value, on)
+			uni.showToast({ title: on ? '夜灯已开启' : '夜灯已关闭', icon: 'none' })
+			// Refresh shadow quickly to show pending/synced state.
+			syncShadowOnce()
+		} catch (e) {
+			nightLightOn.value = !on
+			uni.showToast({ title: '夜灯控制失败', icon: 'none' })
+		} finally {
+			nightLightLoading.value = false
+		}
+	}
+</script>
+
+<style lang="scss">
+	.page {
+		min-height: 100vh;
+		padding: 12px;
+		background: #f7f8fa;
+	}
+
+	.card {
+		background: #fff;
+		border-radius: 12px;
+		padding: 14px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.title {
+		font-size: 18px;
+		font-weight: 600;
+	}
+
+	.meta {
+		margin-top: 6px;
+		color: #666;
+		font-size: 12px;
+	}
+
+	.divider {
+		height: 1px;
+		background: #f2f3f5;
+		margin: 12px 0;
+	}
+
+	.hint {
+		margin-top: 6px;
+		font-size: 11px;
+		color: #999;
+		text-align: right;
+	}
+
+	.actions {
+		margin-top: 12px;
+	}
+
+	.spacer {
+		height: 10px;
+	}
+</style>

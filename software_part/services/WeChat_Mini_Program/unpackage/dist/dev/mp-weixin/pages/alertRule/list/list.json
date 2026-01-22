@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "告警规则",
+  "usingComponents": {
+    "u-button": "../../../uni_modules/uview-plus/components/u-button/u-button",
+    "u-empty": "../../../uni_modules/uview-plus/components/u-empty/u-empty"
+  }
+}

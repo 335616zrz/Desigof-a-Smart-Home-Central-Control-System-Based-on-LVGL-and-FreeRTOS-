@@ -1,0 +1,18 @@
+menu "HTTP Stream options"
+
+config HTTP_STREAM_SUPPORT_GZIP
+    bool "Enable gzip decompression (miniz)"
+    default y
+    help
+      Enable if your server sends Content-Encoding: gzip.
+      We’ll compile lib/gzip/gzip_miniz.c when enabled.
+
+config HTTP_STREAM_SUPPORT_PLAYLIST
+    bool "Enable HLS (.m3u8) playlist support"
+    default y
+    help
+      Parse M3U8 playlists and resolve segment URIs.
+      When enabled, we build http_playlist.c and lib/hls/hls_playlist.c.
+
+endmenu
+
