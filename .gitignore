@@ -93,3 +93,6 @@ software_part/docs/语音控制需求文档.md
 /.tmp_*.png
 /READ.md
 /doc/
+
+# Windows alternate data streams metadata (can appear after extracting archives on Windows)
+*:Zone.Identifier
