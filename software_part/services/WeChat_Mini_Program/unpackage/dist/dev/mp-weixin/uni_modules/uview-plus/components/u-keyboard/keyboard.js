@@ -1,25 +1,2 @@
-"use strict";
-const uni_modules_uviewPlus_libs_i18n_index = require("../../libs/i18n/index.js");
-const Keyboard = {
-  // 键盘组件
-  keyboard: {
-    mode: "number",
-    dotDisabled: false,
-    tooltip: true,
-    showTips: true,
-    tips: "",
-    showCancel: true,
-    showConfirm: true,
-    random: false,
-    safeAreaInsetBottom: true,
-    closeOnClickOverlay: true,
-    show: false,
-    overlay: true,
-    zIndex: 10075,
-    cancelText: uni_modules_uviewPlus_libs_i18n_index.t("up.common.cancel"),
-    confirmText: uni_modules_uviewPlus_libs_i18n_index.t("up.common.confirm"),
-    autoChange: false
-  }
-};
-exports.Keyboard = Keyboard;
+"use strict";const e=require("../../libs/i18n/index.js"),o={keyboard:{mode:"number",dotDisabled:!1,tooltip:!0,showTips:!0,tips:"",showCancel:!0,showConfirm:!0,random:!1,safeAreaInsetBottom:!0,closeOnClickOverlay:!0,show:!1,overlay:!0,zIndex:10075,cancelText:e.t("up.common.cancel"),confirmText:e.t("up.common.confirm"),autoChange:!1}};exports.Keyboard=o;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/components/u-keyboard/keyboard.js.map

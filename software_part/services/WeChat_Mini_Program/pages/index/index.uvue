@@ -44,6 +44,7 @@
 				<!-- Charts Section -->
 				<view class="charts-section">
 					<TelemetryLineChart
+						id="tempLineChart"
 						title="温度趋势"
 						:data="chartSeries"
 						field="temperature"
@@ -54,6 +55,7 @@
 						:interactive="chartMode !== 0"
 					/>
 					<TelemetryLineChart
+						id="humidityLineChart"
 						title="湿度趋势"
 						:data="chartSeries"
 						field="humidity"
@@ -171,7 +173,29 @@
 	const forceOldCanvas = ref(false)
 
 	// 两张折线图共用一份数据源：来自 /api/telemetry 的范围查询结果（与浏览器端 TelemetryChart 的用法一致）
-	const chartSeries = computed(() => (telemetryStore.parsedHistory as any[]) || [])
+	// IMPORTANT: keep the reactive payload small; otherwise WeChat setData can exceed limits
+	// and crash the rendering layer (especially when history mode loads thousands of points).
+	const MAX_POINTS_PER_DEVICE_FOR_PROPS = 500
+	const chartSeries = computed(() => {
+		const list : any[] = (telemetryStore.parsedHistory as any[]) || []
+		const map : any = {}
+		for (const r of list) {
+			const deviceId = String((r as any)?.deviceId ?? '')
+			if (!deviceId) continue
+			const ts = Number((r as any)?.timestamp ?? 0)
+			if (!Number.isFinite(ts) || ts <= 0) continue
+			if (!map[deviceId]) map[deviceId] = []
+			map[deviceId].push(r)
+		}
+		const out : any[] = []
+		const keys = Object.keys(map).sort()
+		for (const deviceId of keys) {
+			const arr : any[] = (map[deviceId] as any[]).sort((a : any, b : any) => (a?.timestamp || 0) - (b?.timestamp || 0))
+			const sliced = arr.length > MAX_POINTS_PER_DEVICE_FOR_PROPS ? arr.slice(arr.length - MAX_POINTS_PER_DEVICE_FOR_PROPS) : arr
+			for (const item of sliced) out.push(item)
+		}
+		return out
+	})
 	// ECharts x 轴范围：实时模式固定 [now-10min, now]；历史模式 min=dataMin，max=now（与浏览器端一致）
 	const chartXAxisMin = computed(() => chartMode.value === 0 ? now.value - LIVE_WINDOW_MS : 'dataMin')
 	const chartXAxisMax = computed(() => now.value)

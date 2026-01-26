@@ -1,0 +1,2 @@
+"use strict";function r(e){return String(e).padStart(2,"0")}function s(e){return e instanceof Date?e:typeof e=="number"?new Date(e):typeof e=="string"?new Date(e.replace(/-/g,"/")):new Date}function D(e,n="YYYY-MM-DD"){const t=s(e),a={YYYY:String(t.getFullYear()),MM:r(t.getMonth()+1),DD:r(t.getDate()),HH:r(t.getHours()),mm:r(t.getMinutes()),ss:r(t.getSeconds())};return n.replace(/YYYY|MM|DD|HH|mm|ss/g,o=>a[o])}function Y(e){return D(e,"YYYY-MM-DDTHH:mm:ss")}exports.toLocalIsoDateTime=Y;
+//# sourceMappingURL=../../.sourcemap/mp-weixin/utils/format.js.map

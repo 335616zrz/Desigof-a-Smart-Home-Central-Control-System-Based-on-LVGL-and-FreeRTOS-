@@ -1,18 +1,2 @@
-"use strict";
-const common_constants = require("../common/constants.js");
-function hasRole(user, role) {
-  if (!user)
-    return false;
-  const r = user.role;
-  if (r && r === role)
-    return true;
-  const roles = user.roles;
-  if (Array.isArray(roles))
-    return roles.includes(role);
-  return false;
-}
-function isAdmin(user) {
-  return hasRole(user, common_constants.USER_ROLES.PRIMARY_ADMIN) || hasRole(user, common_constants.USER_ROLES.SECONDARY_ADMIN) || hasRole(user, common_constants.USER_ROLES.ADMIN);
-}
-exports.isAdmin = isAdmin;
+"use strict";const r=require("../common/constants.js");function t(n,i){if(!n)return!1;const s=n.role;if(s&&s===i)return!0;const e=n.roles;return Array.isArray(e)?e.includes(i):!1}function o(n){return t(n,r.USER_ROLES.PRIMARY_ADMIN)||t(n,r.USER_ROLES.SECONDARY_ADMIN)||t(n,r.USER_ROLES.ADMIN)}exports.isAdmin=o;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/utils/permission.js.map

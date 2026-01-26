@@ -1,26 +1,2 @@
-"use strict";
-const api_http = require("./http.js");
-function listTracks(keyword) {
-  return api_http.request({
-    url: "/api/music",
-    method: "GET",
-    data: keyword ? { keyword } : {}
-  });
-}
-function createTrack(payload) {
-  return api_http.request({
-    url: "/api/music",
-    method: "POST",
-    data: payload || {}
-  });
-}
-function deleteTrack(id) {
-  return api_http.request({
-    url: `/api/music/${id}`,
-    method: "DELETE"
-  });
-}
-exports.createTrack = createTrack;
-exports.deleteTrack = deleteTrack;
-exports.listTracks = listTracks;
+"use strict";const e=require("./http.js");function r(t){return e.request({url:"/api/music",method:"GET",data:t?{keyword:t}:{}})}function u(t){return e.request({url:"/api/music",method:"POST",data:t||{}})}function a(t){return e.request({url:`/api/music/${t}`,method:"DELETE"})}exports.createTrack=u;exports.deleteTrack=a;exports.listTracks=r;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/api/music.js.map

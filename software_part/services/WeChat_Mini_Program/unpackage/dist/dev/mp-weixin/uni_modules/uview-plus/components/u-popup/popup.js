@@ -1,27 +1,2 @@
-"use strict";
-const Popup = {
-  // popup组件
-  popup: {
-    show: false,
-    overlay: true,
-    mode: "bottom",
-    duration: 300,
-    closeable: false,
-    overlayStyle: {},
-    closeOnClickOverlay: true,
-    zIndex: 10075,
-    safeAreaInsetBottom: true,
-    safeAreaInsetTop: false,
-    closeIconPos: "top-right",
-    round: "20px",
-    zoom: true,
-    bgColor: "",
-    overlayOpacity: 0.5,
-    pageInline: false,
-    touchable: false,
-    minHeight: "200px",
-    maxHeight: "600px"
-  }
-};
-exports.Popup = Popup;
+"use strict";const e={popup:{show:!1,overlay:!0,mode:"bottom",duration:300,closeable:!1,overlayStyle:{},closeOnClickOverlay:!0,zIndex:10075,safeAreaInsetBottom:!0,safeAreaInsetTop:!1,closeIconPos:"top-right",round:"20px",zoom:!0,bgColor:"",overlayOpacity:.5,pageInline:!1,touchable:!1,minHeight:"200px",maxHeight:"600px"}};exports.Popup=e;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/components/u-popup/popup.js.map

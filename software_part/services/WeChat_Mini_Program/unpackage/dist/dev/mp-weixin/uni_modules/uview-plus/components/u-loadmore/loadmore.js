@@ -1,27 +1,2 @@
-"use strict";
-const uni_modules_uviewPlus_libs_i18n_index = require("../../libs/i18n/index.js");
-const Loadmore = {
-  // loadmore 组件
-  loadmore: {
-    status: "loadmore",
-    bgColor: "transparent",
-    icon: true,
-    fontSize: 14,
-    iconSize: 17,
-    color: "#606266",
-    loadingIcon: "spinner",
-    loadmoreText: uni_modules_uviewPlus_libs_i18n_index.t("up.loadmoe.loadmore"),
-    loadingText: uni_modules_uviewPlus_libs_i18n_index.t("up.common.loading2") + "...",
-    nomoreText: uni_modules_uviewPlus_libs_i18n_index.t("up.loadmoe.nomore"),
-    isDot: false,
-    iconColor: "#b7b7b7",
-    marginTop: 10,
-    marginBottom: 10,
-    height: "auto",
-    line: false,
-    lineColor: "#E6E8EB",
-    dashed: false
-  }
-};
-exports.Loadmore = Loadmore;
+"use strict";const o=require("../../libs/i18n/index.js"),e={loadmore:{status:"loadmore",bgColor:"transparent",icon:!0,fontSize:14,iconSize:17,color:"#606266",loadingIcon:"spinner",loadmoreText:o.t("up.loadmoe.loadmore"),loadingText:o.t("up.common.loading2")+"...",nomoreText:o.t("up.loadmoe.nomore"),isDot:!1,iconColor:"#b7b7b7",marginTop:10,marginBottom:10,height:"auto",line:!1,lineColor:"#E6E8EB",dashed:!1}};exports.Loadmore=e;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/components/u-loadmore/loadmore.js.map

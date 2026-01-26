@@ -1,5 +1,2 @@
-"use strict";
-const uni_modules_uviewPlus_libs_luchRequest_core_Request = require("../luch-request/core/Request.js");
-const http = new uni_modules_uviewPlus_libs_luchRequest_core_Request.Request();
-exports.http = http;
+"use strict";const e=require("../luch-request/core/Request.js"),t=new e.Request;exports.http=t;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/libs/function/http.js.map

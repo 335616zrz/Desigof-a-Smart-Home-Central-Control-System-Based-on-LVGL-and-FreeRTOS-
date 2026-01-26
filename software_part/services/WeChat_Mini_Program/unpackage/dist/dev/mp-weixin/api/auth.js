@@ -1,27 +1,2 @@
-"use strict";
-const api_http = require("./http.js");
-function login(username, password) {
-  return api_http.request({
-    url: "/api/auth/login",
-    method: "POST",
-    data: { username, password }
-  });
-}
-function register(username, password, email) {
-  return api_http.request({
-    url: "/api/auth/register",
-    method: "POST",
-    data: { username, password, email }
-  });
-}
-function fetchProfile() {
-  return api_http.request({
-    url: "/api/auth/profile",
-    method: "POST",
-    data: {}
-  });
-}
-exports.fetchProfile = fetchProfile;
-exports.login = login;
-exports.register = register;
+"use strict";const r=require("./http.js");function u(t,e){return r.request({url:"/api/auth/login",method:"POST",data:{username:t,password:e}})}function a(t,e,i){return r.request({url:"/api/auth/register",method:"POST",data:{username:t,password:e,email:i}})}function n(){return r.request({url:"/api/auth/profile",method:"POST",data:{}})}exports.fetchProfile=n;exports.login=u;exports.register=a;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/api/auth.js.map

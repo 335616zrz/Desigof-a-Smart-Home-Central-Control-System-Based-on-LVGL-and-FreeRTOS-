@@ -2,8 +2,8 @@
   "navigationBarTitleText": "遥测",
   "usingComponents": {
     "u-button": "../../../uni_modules/uview-plus/components/u-button/u-button",
-    "u-input": "../../../uni_modules/uview-plus/components/u-input/u-input",
+    "u-loadmore": "../../../uni_modules/uview-plus/components/u-loadmore/u-loadmore",
     "u-empty": "../../../uni_modules/uview-plus/components/u-empty/u-empty",
-    "telemetry-chart": "../../../components/TelemetryChart/TelemetryChart"
+    "telemetry-line-chart": "../../../components/TelemetryLineChart/TelemetryLineChart"
   }
 }

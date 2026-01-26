@@ -1,11 +1,2 @@
-"use strict";
-const Grid = {
-  // grid组件
-  grid: {
-    col: 3,
-    border: false,
-    align: "left"
-  }
-};
-exports.Grid = Grid;
+"use strict";const r={grid:{col:3,border:!1,align:"left"}};exports.Grid=r;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/components/u-grid/grid.js.map

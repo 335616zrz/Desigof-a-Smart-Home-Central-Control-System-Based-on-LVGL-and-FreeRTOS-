@@ -9,8 +9,10 @@
 		</view>
 		<view v-if="hasData" class="chart-wrap">
 			<ec-canvas
+				id="ecCanvas"
 				:canvas-id="canvasId"
 				:ec="ec"
+				@init="onEcCanvasInit"
 				:force-use-old-canvas="forceUseOldCanvas"
 				class="ec-host"
 			/>
@@ -323,6 +325,18 @@
 		}
 		chart.setOption(buildOption(), true)
 		return chart
+	}
+
+	// uni-app X/WeChat 原生组件在 props 传递时可能会丢失函数（ec.onInit），
+	// 此时 ec-canvas 会触发 init 事件而不是调用 onInit；这里做兜底处理。
+	function onEcCanvasInit(e : any) {
+		const detail : any = (e as any)?.detail ?? e ?? {}
+		const canvas = detail?.canvas
+		const width = Number(detail?.width ?? 0)
+		const height = Number(detail?.height ?? 0)
+		// old canvas: canvasDpr; new canvas: dpr
+		const dpr = Number(detail?.dpr ?? detail?.canvasDpr ?? 1)
+		initChart(canvas, width, height, dpr)
 	}
 
 	const ec = computed(() => ({

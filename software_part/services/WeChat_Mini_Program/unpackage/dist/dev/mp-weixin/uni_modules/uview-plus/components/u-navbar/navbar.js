@@ -1,26 +1,2 @@
-"use strict";
-const uni_modules_uviewPlus_libs_config_color = require("../../libs/config/color.js");
-const Navbar = {
-  // navbar 组件
-  navbar: {
-    safeAreaInsetTop: true,
-    placeholder: false,
-    fixed: true,
-    border: false,
-    leftIcon: "arrow-left",
-    leftText: "",
-    rightText: "",
-    rightIcon: "",
-    title: "",
-    titleColor: "",
-    bgColor: "#ffffff",
-    titleWidth: "400rpx",
-    height: "44px",
-    leftIconSize: 20,
-    leftIconColor: uni_modules_uviewPlus_libs_config_color.color.mainColor,
-    autoBack: false,
-    titleStyle: ""
-  }
-};
-exports.Navbar = Navbar;
+"use strict";const e=require("../../libs/config/color.js"),t={navbar:{safeAreaInsetTop:!0,placeholder:!1,fixed:!0,border:!1,leftIcon:"arrow-left",leftText:"",rightText:"",rightIcon:"",title:"",titleColor:"",bgColor:"#ffffff",titleWidth:"400rpx",height:"44px",leftIconSize:20,leftIconColor:e.color.mainColor,autoBack:!1,titleStyle:""}};exports.Navbar=t;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/components/u-navbar/navbar.js.map

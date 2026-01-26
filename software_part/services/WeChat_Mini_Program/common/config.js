@@ -16,9 +16,6 @@ export const STORAGE_KEY_BASE_URL = 'W_BASE_URL'
 // Useful when API is behind a gateway/port but static files are served by another host.
 // Example: wx.setStorageSync('W_MUSIC_BASE_URL', 'http://192.168.1.3')
 export const STORAGE_KEY_MUSIC_BASE_URL = 'W_MUSIC_BASE_URL'
-// Default LAN gateway host (nginx) for real-device debugging.
-// It should proxy `/api/*` to backend (see IoT_cloud_platform/deploy/docker/nginx/nginx.conf).
-const DEFAULT_LAN_GATEWAY = 'http://servers.local:8088'
 // Default music host (served by Caddy in this repo’s Music_Server workflow).
 const DEFAULT_MUSIC_HOST = 'http://music-server.local'
 
@@ -88,19 +85,15 @@ export function getBaseUrl() {
   const base = BASE_URL_MAP[env] || BASE_URL_MAP[ENV.RELEASE]
 
   // In WeChat devtools, "localhost" is fine; on real device, it points to the phone itself.
-  // Keep default as-is (so devtools works out of the box), but hint via console warning.
+  // Keep default as-is (so devtools works out of the box), and guide the user to set an override
+  // on the login page for true-device debugging.
   const platform = getWxPlatform()
   if (platform && platform !== 'devtools' && /:\/\/localhost\b/i.test(base)) {
-    // If user didn't set an override, use mDNS gateway by default on real devices.
-    const fallback = normalizeBaseUrl(DEFAULT_LAN_GATEWAY)
-    if (fallback) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[config] Detected real device + localhost baseUrl. Using fallback "${fallback}". ` +
-          `You can override via storage "${STORAGE_KEY_BASE_URL}" (e.g. "http://192.168.1.3:8088").`
-      )
-      return fallback
-    }
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[config] Detected real device + localhost baseUrl ("${base}"). ` +
+        `Please set API baseUrl via storage "${STORAGE_KEY_BASE_URL}" (e.g. "http://192.168.1.3:8080").`
+    )
   }
   return base
 }

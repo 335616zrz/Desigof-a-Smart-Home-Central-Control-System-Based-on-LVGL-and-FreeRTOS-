@@ -1,11 +1,2 @@
-"use strict";
-const Collapse = {
-  // collapse 组件
-  collapse: {
-    value: null,
-    accordion: false,
-    border: true
-  }
-};
-exports.Collapse = Collapse;
+"use strict";const l={collapse:{value:null,accordion:!1,border:!0}};exports.Collapse=l;
 //# sourceMappingURL=../../../../../.sourcemap/mp-weixin/uni_modules/uview-plus/components/u-collapse/collapse.js.map

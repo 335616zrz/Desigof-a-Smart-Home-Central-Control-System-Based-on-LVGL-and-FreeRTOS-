@@ -107,7 +107,18 @@ export function request(options) {
         reject(res)
       },
       fail: (err) => {
-        uni.showToast({ title: err?.errMsg || '网络异常', icon: 'none' })
+        const raw = String(err?.errMsg || '')
+        // Common real-device issues:
+        // - ERR_NAME_NOT_RESOLVED: user entered an mDNS/hostname that the phone can't resolve (e.g. servers.local)
+        //   or used a full-width colon "：" causing an invalid host.
+        // - url not in domain list: WeChat request domain whitelist / urlCheck not disabled.
+        if (/ERR_NAME_NOT_RESOLVED/i.test(raw)) {
+          uni.showToast({ title: '域名解析失败：请在登录页把服务器改为电脑局域网IP(如 192.168.x.x:8080)', icon: 'none' })
+        } else if (/url not in domain list/i.test(raw)) {
+          uni.showToast({ title: '域名未加入小程序请求合法域名(真机需配置或关闭校验)', icon: 'none' })
+        } else {
+          uni.showToast({ title: raw || '网络异常', icon: 'none' })
+        }
         reject(err)
       },
     })

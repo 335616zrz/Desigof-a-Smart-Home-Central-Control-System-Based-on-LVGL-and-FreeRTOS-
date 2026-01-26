@@ -30,8 +30,10 @@ export function parseTelemetryRecord(record) {
 
   const ts = new Date(record.reportedAt || record.timestamp || 0).getTime()
 
+  // NOTE: Don't spread `record` here. The raw `payload` can be very large and will
+  // bloat setData payloads when we pass parsed data into chart components.
   return {
-    ...record,
+    deviceId: record.deviceId,
     temperature: toNumberOrNull(data?.temperature),
     humidity: toNumberOrNull(data?.humidity),
     pressure: toNumberOrNull(data?.pressure),
@@ -94,7 +96,8 @@ export const useTelemetryStore = defineStore('telemetry', {
       return this.latest
     },
 
-    async fetchHistory(params) {
+    async fetchHistory(params, opts = {}) {
+      const append = Boolean(opts && (opts.append === true))
       const reqSeq = ++this._historyReqSeq
       this.loading = true
       try {
@@ -108,21 +111,43 @@ export const useTelemetryStore = defineStore('telemetry', {
         const items = data?.items || []
         const head = items[0] || null
         const headKey = head ? `${head.id || ''}|${head.reportedAt || head.timestamp || ''}` : ''
-        if (
-          headKey &&
-          headKey === this._historyHeadKey &&
-          Array.isArray(this.history) &&
-          this.history.length === items.length
-        ) {
-          // Keep existing arrays to avoid triggering large rerenders when nothing changed.
-          this.total = data?.total || this.total
-          this.page = data?.page || this.page
-          this.pageSize = data?.pageSize || data?.page_size || this.pageSize
-          return data
+
+        if (!append) {
+          if (
+            headKey &&
+            headKey === this._historyHeadKey &&
+            Array.isArray(this.history) &&
+            this.history.length === items.length
+          ) {
+            // Keep existing arrays to avoid triggering large rerenders when nothing changed.
+            this.total = data?.total || this.total
+            this.page = data?.page || this.page
+            this.pageSize = data?.pageSize || data?.page_size || this.pageSize
+            return data
+          }
+
+          this.history = items
+          this._historyHeadKey = headKey
+        } else {
+          // Append mode: used by the telemetry history page to page through older records.
+          const existing = Array.isArray(this.history) ? this.history : []
+          const merged = existing.slice()
+          const seen = new Set(
+            existing.map((r) =>
+              r?.id ? String(r.id) : `${String(r?.deviceId || '')}|${String(r?.reportedAt || r?.timestamp || '')}`
+            )
+          )
+          for (const r of items) {
+            const key = r?.id ? String(r.id) : `${String(r?.deviceId || '')}|${String(r?.reportedAt || r?.timestamp || '')}`
+            if (seen.has(key)) continue
+            seen.add(key)
+            merged.push(r)
+          }
+          this.history = merged
+          // Preserve head key from the first page; set it if we didn't have one yet.
+          if (!this._historyHeadKey) this._historyHeadKey = headKey
         }
 
-        this.history = items
-        this._historyHeadKey = headKey
         this.total = data?.total || 0
         this.page = data?.page || 1
         this.pageSize = data?.pageSize || data?.page_size || 100

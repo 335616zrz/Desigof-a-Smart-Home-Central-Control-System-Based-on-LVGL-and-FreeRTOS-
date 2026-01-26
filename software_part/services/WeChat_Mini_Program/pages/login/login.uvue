@@ -20,7 +20,7 @@
 					<u-form-item v-if="showAdvanced" label="服务器" labelWidth="80">
 						<u-input
 							v-model="serverUrl"
-							placeholder="例如 servers.local:8088 或 http://192.168.1.3:8088"
+							placeholder="例如 192.168.1.3:8080 或 http://192.168.1.3:8080（注意英文冒号:）"
 							clearable
 						/>
 					</u-form-item>
@@ -44,7 +44,7 @@
 <script setup lang="uts">
 	import { useAuthStore } from '../../stores/auth.js'
 	import { ROUTES } from '../../common/constants.js'
-	import { getBaseUrl, getMusicBaseUrl, setBaseUrl, setMusicBaseUrl } from '../../common/config.js'
+	import { getBaseUrl, getMusicBaseUrl, setBaseUrl, setMusicBaseUrl, STORAGE_KEY_BASE_URL } from '../../common/config.js'
 	import { required } from '../../utils/validator.js'
 
 	const auth = useAuthStore()
@@ -65,9 +65,15 @@
 		try {
 			const info : any = wx?.getSystemInfoSync?.()
 			const platform = String(info?.platform || '')
-			if (platform && platform !== 'devtools' && String(serverUrl.value).indexOf('localhost') >= 0) {
+			let hasOverride = false
+			try {
+				hasOverride = Boolean(uni.getStorageSync(STORAGE_KEY_BASE_URL))
+			} catch (e) {}
+
+			// If user hasn't configured a LAN base URL yet, show the server settings by default on real devices.
+			if (platform && platform !== 'devtools' && !hasOverride) {
 				showAdvanced.value = true
-				uni.showToast({ title: '真机调试请设置服务器地址', icon: 'none' })
+				uni.showToast({ title: '真机调试请设置服务器地址(电脑局域网IP)', icon: 'none' })
 			}
 		} catch (e) {}
 		// #endif
@@ -93,8 +99,15 @@
 			await auth.login(form.username, form.password)
 			uni.reLaunch({ url: ROUTES.INDEX })
 		} catch (e) {
-			// Toast already handled by request wrapper; provide a fallback.
-			uni.showToast({ title: '登录失败', icon: 'none' })
+			// Request wrapper usually shows a toast already (network errors / backend msg).
+			// Avoid overwriting the real error with a generic message.
+			const statusCode = Number((e as any)?.statusCode || 0)
+			if (statusCode === 401) {
+				uni.showToast({ title: '用户名或密码错误', icon: 'none' })
+			} else {
+				const msg = String((e as any)?.msg || (e as any)?.message || (e as any)?.errMsg || '')
+				if (!msg) uni.showToast({ title: '登录失败', icon: 'none' })
+			}
 		} finally {
 			loading.value = false
 		}

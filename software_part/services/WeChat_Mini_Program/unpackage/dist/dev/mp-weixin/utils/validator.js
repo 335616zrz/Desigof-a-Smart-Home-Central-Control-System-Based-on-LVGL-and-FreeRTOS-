@@ -1,28 +1,2 @@
-"use strict";
-function isEmail(value) {
-  if (!value)
-    return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value));
-}
-function isStrongPassword(value, minLen = 6) {
-  if (!value)
-    return false;
-  const v = String(value);
-  if (v.length < minLen)
-    return false;
-  const groups = [
-    /[a-zA-Z]/.test(v),
-    /\d/.test(v),
-    /[^a-zA-Z0-9]/.test(v)
-  ].filter(Boolean).length;
-  return groups >= 2;
-}
-function required(value) {
-  if (value === 0)
-    return true;
-  return value !== null && value !== void 0 && String(value).trim() !== "";
-}
-exports.isEmail = isEmail;
-exports.isStrongPassword = isStrongPassword;
-exports.required = required;
+"use strict";function s(t){return t?/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(t)):!1}function i(t,n=6){if(!t)return!1;const r=String(t);return r.length<n?!1:[/[a-zA-Z]/.test(r),/\d/.test(r),/[^a-zA-Z0-9]/.test(r)].filter(Boolean).length>=2}function e(t){return t===0?!0:t!=null&&String(t).trim()!==""}exports.isEmail=s;exports.isStrongPassword=i;exports.required=e;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/utils/validator.js.map

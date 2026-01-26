@@ -2,11 +2,13 @@
 	<view class="page">
 		<view class="header">
 			<u-button size="mini" @click="pickDevice">{{ deviceLabel }}</u-button>
+			<u-button size="mini" @click="pickRange">{{ rangeLabel }}</u-button>
 			<u-button type="primary" size="mini" :loading="loading" @click="refresh">刷新</u-button>
 		</view>
 
 		<view class="charts">
 			<TelemetryLineChart
+				id="historyTempLineChart"
 				title="温度趋势"
 				:data="chartSeries"
 				field="temperature"
@@ -14,6 +16,7 @@
 				:interactive="true"
 			/>
 			<TelemetryLineChart
+				id="historyHumidityLineChart"
 				title="湿度趋势"
 				:data="chartSeries"
 				field="humidity"
@@ -29,6 +32,7 @@
 				</view>
 				<text class="payload">{{ r.payload || '' }}</text>
 			</view>
+			<u-loadmore :status="loadStatus" />
 			<u-empty v-if="!loading && records.length === 0" text="暂无遥测数据" mode="data" />
 		</view>
 	</view>
@@ -38,20 +42,66 @@
 	import TelemetryLineChart from '../../../components/TelemetryLineChart/TelemetryLineChart.uvue'
 	import { useDeviceStore } from '../../../stores/device.js'
 	import { useTelemetryStore } from '../../../stores/telemetry.js'
+	import { toLocalIsoDateTime } from '../../../utils/format.js'
 
 	const deviceStore = useDeviceStore()
 	const store = useTelemetryStore()
 
 	const selectedDeviceId = ref('')
+	const rangeId = ref('all')
+
+	const PAGE_SIZE = 200
+	const currentPage = ref(1)
+	const hasMore = ref(true)
 
 	const loading = computed(() => Boolean(store.loading))
 	const records = computed(() => store.history || [])
-	const chartSeries = computed(() => (store.parsedHistory as any[]) || [])
+	// Keep chart prop payload small to avoid WeChat setData size limits.
+	const MAX_POINTS_PER_DEVICE_FOR_PROPS = 500
+	const chartSeries = computed(() => {
+		const list : any[] = (store.parsedHistory as any[]) || []
+		const map : any = {}
+		for (const r of list) {
+			const deviceId = String((r as any)?.deviceId ?? '')
+			if (!deviceId) continue
+			const ts = Number((r as any)?.timestamp ?? 0)
+			if (!Number.isFinite(ts) || ts <= 0) continue
+			if (!map[deviceId]) map[deviceId] = []
+			map[deviceId].push(r)
+		}
+		const out : any[] = []
+		const keys = Object.keys(map).sort()
+		for (const deviceId of keys) {
+			const arr : any[] = (map[deviceId] as any[]).sort((a : any, b : any) => (a?.timestamp || 0) - (b?.timestamp || 0))
+			const sliced = arr.length > MAX_POINTS_PER_DEVICE_FOR_PROPS ? arr.slice(arr.length - MAX_POINTS_PER_DEVICE_FOR_PROPS) : arr
+			for (const item of sliced) out.push(item)
+		}
+		return out
+	})
 
 	const deviceLabel = computed(() => {
 		if (!selectedDeviceId.value) return '全部设备'
 		const d : any = (deviceStore.items || []).find((x : any) => x?.deviceId === selectedDeviceId.value)
 		return d?.name ? `${d.name}` : selectedDeviceId.value
+	})
+
+	const RANGE_ITEMS : any[] = [
+		{ id: '10m', name: '近10分钟', ms: 10 * 60 * 1000 },
+		{ id: '1h', name: '近1小时', ms: 60 * 60 * 1000 },
+		{ id: '24h', name: '近24小时', ms: 24 * 60 * 60 * 1000 },
+		{ id: '7d', name: '近7天', ms: 7 * 24 * 60 * 60 * 1000 },
+		{ id: '30d', name: '近30天', ms: 30 * 24 * 60 * 60 * 1000 },
+		{ id: 'all', name: '全部', ms: 0 },
+	]
+
+	const rangeLabel = computed(() => {
+		const item : any = RANGE_ITEMS.find((x : any) => x.id === rangeId.value)
+		return item?.name || '时间范围'
+	})
+
+	const loadStatus = computed(() => {
+		if (loading.value) return 'loading'
+		return hasMore.value ? 'loadmore' : 'nomore'
 	})
 
 	onShow(async () => {
@@ -63,12 +113,61 @@
 	})
 
 	async function refresh() {
-		await store.fetchHistory({
-			deviceId: selectedDeviceId.value,
-			// Increase points a bit so the history charts are meaningful.
-			pageSize: 500,
-			page: 1,
-		})
+		currentPage.value = 1
+		hasMore.value = true
+
+		const now = Date.now()
+		const range : any = RANGE_ITEMS.find((x : any) => x.id === rangeId.value)
+		const ms = Number(range?.ms ?? 0)
+		const fromTs = ms > 0 ? now - ms : 0
+
+		const resp : any = await store.fetchHistory(
+			{
+				deviceId: selectedDeviceId.value ? selectedDeviceId.value : undefined,
+				from: toLocalIsoDateTime(fromTs),
+				to: toLocalIsoDateTime(now),
+				pageSize: PAGE_SIZE,
+				page: 1,
+			},
+			{ append: false },
+		)
+
+		updateHasMore(resp, 1)
+	}
+
+	async function loadMore() {
+		if (loading.value || !hasMore.value) return
+		const next = currentPage.value + 1
+
+		const now = Date.now()
+		const range : any = RANGE_ITEMS.find((x : any) => x.id === rangeId.value)
+		const ms = Number(range?.ms ?? 0)
+		const fromTs = ms > 0 ? now - ms : 0
+
+		const resp : any = await store.fetchHistory(
+			{
+				deviceId: selectedDeviceId.value ? selectedDeviceId.value : undefined,
+				from: toLocalIsoDateTime(fromTs),
+				to: toLocalIsoDateTime(now),
+				pageSize: PAGE_SIZE,
+				page: next,
+			},
+			{ append: true },
+		)
+
+		currentPage.value = next
+		updateHasMore(resp, next)
+	}
+
+	function updateHasMore(resp : any, page : number) {
+		const items : any[] = (resp?.items as any[]) || []
+		const total = Number(resp?.total ?? 0)
+		if (total > 0) {
+			hasMore.value = page * PAGE_SIZE < total
+			return
+		}
+		// Fallback: if backend doesn't return total, treat "full page" as more.
+		hasMore.value = items.length >= PAGE_SIZE
 	}
 
 	function pickDevice() {
@@ -87,6 +186,22 @@
 			},
 		})
 	}
+
+	function pickRange() {
+		uni.showActionSheet({
+			itemList: RANGE_ITEMS.map((x : any) => x.name),
+			success: (res : any) => {
+				const idx = res?.tapIndex ?? -1
+				if (idx < 0) return
+				rangeId.value = RANGE_ITEMS[idx].id
+				refresh()
+			},
+		})
+	}
+
+	onReachBottom(() => {
+		loadMore()
+	})
 </script>
 
 <style lang="scss">
