@@ -21,7 +21,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
-#include "freertos/idf_additions.h" /* xTaskCreate*WithCaps / vTaskDeleteWithCaps */
 
 #include "esp_log.h"
 
@@ -165,11 +164,7 @@ static void splash_autoconn_task(void *arg)
         (void)lv_async_call(route_to_home, ui);
         lvgl_port_unlock();
     }
-#if (configSUPPORT_STATIC_ALLOCATION == 1) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    vTaskDeleteWithCaps(NULL);
-#else
     vTaskDelete(NULL);
-#endif
 }
 
 void splash_show_and_autoconnect(lv_ui *ui)
@@ -210,15 +205,7 @@ void splash_show_and_autoconnect(lv_ui *ui)
 
     // 在后台任务中执行一次自动连接 + 路由
     ESP_LOGI(TAG, "creating splash_conn task...");
-    BaseType_t ret = pdFAIL;
-#if (configSUPPORT_STATIC_ALLOCATION == 1) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    ret = xTaskCreatePinnedToCoreWithCaps(
-        splash_autoconn_task, "splash_conn",
-        4096, ui, 4, NULL, 1,
-        MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-#else
-    ret = xTaskCreatePinnedToCore(splash_autoconn_task, "splash_conn", 4096, ui, 4, NULL, 1);
-#endif
+    BaseType_t ret = xTaskCreatePinnedToCore(splash_autoconn_task, "splash_conn", 4096, ui, 4, NULL, 1);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "splash_conn task create failed! ret=%d, falling back to home", (int)ret);
         if (lvgl_port_lock(200)) {
@@ -227,8 +214,5 @@ void splash_show_and_autoconnect(lv_ui *ui)
         }
     } else {
         ESP_LOGI(TAG, "splash_conn task created successfully");
-#if (configSUPPORT_STATIC_ALLOCATION == 1) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        ESP_LOGI(TAG, "splash_conn: PSRAM stack (4KB)");
-#endif
     }
 }

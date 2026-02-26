@@ -36,7 +36,6 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/idf_additions.h" /* xTaskCreate*WithCaps / vTaskDeleteWithCaps */
 
 static const char *TAG = "wifi_ui";
 
@@ -522,11 +521,7 @@ static void wifi_stop_task(void *arg)
         }
         lvgl_port_unlock();
     }
-#if (configSUPPORT_STATIC_ALLOCATION == 1) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    vTaskDeleteWithCaps(NULL);
-#else
     vTaskDelete(NULL);
-#endif
 }
 
 void wifi_ui_toggle(bool on)
@@ -552,22 +547,10 @@ void wifi_ui_toggle(bool on)
     } else {
         /* 在后台任务中执行 Wi-Fi 停止操作，避免阻塞 LVGL 线程导致 UI 卡死 */
         ui_set_status_async("Stopping Wi-Fi...");
-        BaseType_t ret = pdFAIL;
-#if (configSUPPORT_STATIC_ALLOCATION == 1) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        ret = xTaskCreatePinnedToCoreWithCaps(
-            wifi_stop_task, "wifi_stop",
-            3072, NULL, 5, NULL, 1,
-            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-#else
-        ret = xTaskCreatePinnedToCore(wifi_stop_task, "wifi_stop", 3072, NULL, 5, NULL, 1);
-#endif
+        BaseType_t ret = xTaskCreatePinnedToCore(wifi_stop_task, "wifi_stop", 3072, NULL, 5, NULL, 1);
         if (ret != pdPASS) {
             ESP_LOGE(TAG, "Failed to create wifi_stop task");
             ui_set_status_async("Wi-Fi stop failed");
-        } else {
-#if (configSUPPORT_STATIC_ALLOCATION == 1) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-            ESP_LOGI(TAG, "wifi_stop: PSRAM stack (3KB)");
-#endif
         }
     }
 }

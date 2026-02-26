@@ -119,8 +119,7 @@
 		"custom": {
 			"^u-(.*)": "uni_modules/uview-plus/components/u-$1/u-$1.vue",
 			"^up-(.*)": "uni_modules/uview-plus/components/u-$1/u-$1.vue",
-			"^mrsong-charts$": "uni_modules/mrsong-charts/components/mrsong-charts/mrsong-charts.vue",
-			"^ec-canvas$": "wxcomponents/ec-canvas/ec-canvas"
+			"^mrsong-charts$": "uni_modules/mrsong-charts/components/mrsong-charts/mrsong-charts.vue"
 		}
 	},
 	"globalStyle": {
