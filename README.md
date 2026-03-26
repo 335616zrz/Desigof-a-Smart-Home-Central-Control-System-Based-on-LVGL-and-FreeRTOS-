@@ -23,8 +23,38 @@
 
 ## 效果展示
 
-> 本仓库当前未提交运行截图（`docs/images/` 仅保留目录占位）。
-> 如需展示，可自行补充截图文件：`device.jpg` / `ui-home.png` / `ui-music.png`。
+### 终端硬件实物
+
+<div align="center">
+  <img src="docs/images/device.jpg" alt="终端硬件实物图" width="520" />
+</div>
+
+### 终端核心界面
+
+<div align="center">
+  <img src="docs/images/ui-home.png" alt="终端首页" width="31%" />
+  <img src="docs/images/ui-music.png" alt="音乐播放页" width="31%" />
+  <img src="docs/images/ui-chat.png" alt="GPT 对话页" width="31%" />
+</div>
+
+<div align="center">
+  <img src="docs/images/ui-weather.png" alt="天气页面" width="31%" />
+  <img src="docs/images/ui-wifi.png" alt="Wi‑Fi 配网页面" width="31%" />
+  <img src="docs/images/ui-app.png" alt="应用中心页面" width="31%" />
+</div>
+
+### 云平台与移动端
+
+<div align="center">
+  <img src="docs/images/cloud-dashboard.png" alt="Web 端关键页面" width="48%" />
+  <img src="docs/images/mini-overview.png" alt="微信小程序关键页面" width="22.5%" />
+</div>
+
+<div align="center">
+  <img src="docs/images/cloud-device.png" alt="云平台设备管理" width="32%" />
+  <img src="docs/images/cloud-telemetry.png" alt="云平台遥测页面" width="32%" />
+  <img src="docs/images/cloud-alert.png" alt="云平台告警页面" width="32%" />
+</div>
 
 ---
 
@@ -58,7 +88,11 @@
   - 语音：WebSocket 实时 ASR + TTS
   - 通信：MQTT 遥测上报 + HTTPS OTA 升级
 
-> 架构图预留：`docs/images/architecture.png`（仓库暂未提供）
+<div align="center">
+  <img src="docs/images/architecture.png" alt="系统总体架构图" width="100%" />
+</div>
+
+> 架构图展示了数据链路、控制链路与语音链路在终端、云平台、多端应用和部署运行层之间的协同关系。
 
 ---
 
@@ -74,6 +108,15 @@
 | 温湿度   | SHT40         | I2C           | 高精度传感器   |
 | RGB LED  | WS2812B       | RMT (GPIO48)  | 夜灯/告警指示  |
 | 存储     | SD Card       | SPI           | 本地音乐/日志  |
+
+### 硬件设计展示
+
+<div align="center">
+  <img src="docs/images/hardware-pcb.png" alt="PCB 设计图" width="48%" />
+  <img src="docs/images/hardware-core.png" alt="ESP32-S3 最小系统原理图" width="48%" />
+</div>
+
+> 更多显示触控、音频输入输出、传感与扩展模块相关原理图可在 `hardware_part/` 和外部设计资料中继续查阅。
 
 ---
 
@@ -271,9 +314,9 @@ ESP-IDF 配置建议：
 
 ## 许可证
 
-本项目仅供学习与毕业设计使用。
+本项目仅供学习使用,非作者本人不可直接用于毕业设计与商业用途。
 
 ---
 
-**作者**：zrz
+**作者**：九思
 **版本**：0.0.2

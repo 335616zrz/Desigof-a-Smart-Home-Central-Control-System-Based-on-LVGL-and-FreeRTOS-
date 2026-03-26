@@ -1,6 +1,4 @@
 {
   "component": true,
-  "usingComponents": {
-    "ec-canvas": "../../wxcomponents/ec-canvas/ec-canvas"
-  }
+  "usingComponents": {}
 }
