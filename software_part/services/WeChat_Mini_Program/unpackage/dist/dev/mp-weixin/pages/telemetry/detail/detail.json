@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "详细趋势",
+  "usingComponents": {
+    "u-button": "../../../uni_modules/uview-plus/components/u-button/u-button",
+    "telemetry-echart-detail": "../../../components/TelemetryEchartDetail/TelemetryEchartDetail"
+  }
+}

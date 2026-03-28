@@ -3,6 +3,8 @@ import * as echarts from './echarts';
 
 // Console spam in WeChat devtools can cause huge memory usage (especially with 1s polling pages).
 const DEBUG_EC_CANVAS = false;
+const MAX_INIT_RETRIES = 6;
+const INIT_RETRY_DELAY = 80;
 
 // Expose echarts on the global object so UTS (uni-app X) code can access it reliably.
 // In some UTS interop cases, `import * as echarts` from a wxcomponents path may become `undefined`.
@@ -93,7 +95,23 @@ Component({
   },
 
   methods: {
-    init: function (callback) {
+    scheduleInitRetry: function (callback, retryCount) {
+      const nextRetry = Number(retryCount || 0) + 1;
+      if (nextRetry > MAX_INIT_RETRIES) {
+        console.warn('[ec-canvas] init skipped: canvas size is still 0', {
+          canvasId: this.data.canvasId,
+          retryCount: nextRetry - 1
+        });
+        return false;
+      }
+
+      setTimeout(() => {
+        this.init(callback, nextRetry);
+      }, INIT_RETRY_DELAY);
+      return true;
+    },
+
+    init: function (callback, retryCount = 0) {
       const sys = wx.getSystemInfoSync()
       const version = sys.SDKVersion
       const platform = sys.platform
@@ -121,7 +139,7 @@ Component({
       if (isUseNewCanvas) {
         // console.log('微信基础库版本大于2.9.0，开始使用<canvas type="2d"/>');
         // 2.9.0 可以使用 <canvas type="2d"></canvas>
-        this.initByNewWay(callback);
+        this.initByNewWay(callback, retryCount);
       } else {
         const isValid = compareVersion(version, '1.9.91') >= 0
         if (!isValid) {
@@ -131,12 +149,12 @@ Component({
           return;
         } else {
           console.warn('建议将微信基础库调整大于等于2.9.0版本。升级后绘图将有更好性能');
-          this.initByOldWay(callback);
+          this.initByOldWay(callback, retryCount);
         }
       }
     },
 
-    initByOldWay(callback) {
+    initByOldWay(callback, retryCount = 0) {
       // 1.9.91 <= version < 2.9.0：原来的方式初始化
       ctx = wx.createCanvasContext(this.data.canvasId, this);
       const canvas = new WxCanvas(ctx, this.data.canvasId, false);
@@ -152,45 +170,73 @@ Component({
       const canvasDpr = 1
       var query = wx.createSelectorQuery().in(this);
       query.select('.ec-canvas').boundingClientRect(res => {
+        const width = Number((res && res.width) || 0);
+        const height = Number((res && res.height) || 0);
+        if ((width <= 0 || height <= 0) && this.scheduleInitRetry(callback, retryCount)) {
+          return;
+        }
+        if (width <= 0 || height <= 0) {
+          console.warn('[ec-canvas] old canvas size invalid', {
+            canvasId: this.data.canvasId,
+            width,
+            height
+          });
+          return;
+        }
+
         if (typeof callback === 'function') {
-          this.chart = callback(canvas, res.width, res.height, canvasDpr);
+          this.chart = callback(canvas, width, height, canvasDpr);
         }
         else if (this.data.ec && typeof this.data.ec.onInit === 'function') {
           try {
-            this.chart = this.data.ec.onInit(canvas, res.width, res.height, canvasDpr);
+            this.chart = this.data.ec.onInit(canvas, width, height, canvasDpr);
           } catch (err) {
             console.error('[ec-canvas] ec.onInit failed, fallback to init event', err);
             this.triggerEvent('init', {
               canvas: canvas,
-              width: res.width,
-              height: res.height,
+              width: width,
+              height: height,
               canvasDpr: canvasDpr // 增加了dpr，可方便外面echarts.init
             });
           }
         } else {
           this.triggerEvent('init', {
             canvas: canvas,
-            width: res.width,
-            height: res.height,
+            width: width,
+            height: height,
             canvasDpr: canvasDpr // 增加了dpr，可方便外面echarts.init
           });
         }
       }).exec();
     },
 
-    initByNewWay(callback) {
+    initByNewWay(callback, retryCount = 0) {
       // version >= 2.9.0：使用新的方式初始化
       const query = wx.createSelectorQuery().in(this)
       query
         .select('.ec-canvas')
         .fields({ node: true, size: true })
         .exec(res => {
-          const canvasNode = res[0].node
+          const info = (res && res[0]) || {}
+          const canvasNode = info.node
           this.canvasNode = canvasNode
 
           const canvasDpr = wx.getSystemInfoSync().pixelRatio
-          const canvasWidth = res[0].width
-          const canvasHeight = res[0].height
+          const canvasWidth = Number(info.width || 0)
+          const canvasHeight = Number(info.height || 0)
+
+          if ((!canvasNode || canvasWidth <= 0 || canvasHeight <= 0) && this.scheduleInitRetry(callback, retryCount)) {
+            return
+          }
+          if (!canvasNode || canvasWidth <= 0 || canvasHeight <= 0) {
+            console.warn('[ec-canvas] new canvas size invalid', {
+              canvasId: this.data.canvasId,
+              hasNode: Boolean(canvasNode),
+              width: canvasWidth,
+              height: canvasHeight
+            })
+            return
+          }
 
           const ctx = canvasNode.getContext('2d')
 

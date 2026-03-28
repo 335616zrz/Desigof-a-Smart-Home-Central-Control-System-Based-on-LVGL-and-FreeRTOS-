@@ -20,7 +20,8 @@
     {
       "root": "pages/telemetry",
       "pages": [
-        "history/history"
+        "history/history",
+        "detail/detail"
       ]
     },
     {

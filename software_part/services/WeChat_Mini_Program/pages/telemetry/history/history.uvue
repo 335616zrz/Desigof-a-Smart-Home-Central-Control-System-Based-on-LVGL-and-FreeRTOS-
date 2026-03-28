@@ -3,6 +3,7 @@
 		<view class="header">
 			<u-button size="mini" @click="pickDevice">{{ deviceLabel }}</u-button>
 			<u-button size="mini" @click="pickRange">{{ rangeLabel }}</u-button>
+			<u-button size="mini" plain @click="goDetailTrend">详细趋势</u-button>
 			<u-button type="primary" size="mini" :loading="loading" @click="refresh">刷新</u-button>
 		</view>
 
@@ -197,6 +198,10 @@
 				refresh()
 			},
 		})
+	}
+
+	function goDetailTrend() {
+		uni.navigateTo({ url: '/pages/telemetry/detail/detail' })
 	}
 
 	onReachBottom(() => {

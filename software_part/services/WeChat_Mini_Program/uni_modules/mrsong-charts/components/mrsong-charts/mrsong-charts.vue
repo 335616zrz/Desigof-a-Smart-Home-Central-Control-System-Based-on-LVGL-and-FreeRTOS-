@@ -14,11 +14,11 @@
 				:type="type"
 				:canvas2d="true"
 				:chart-data="currentData"
-				background="none"
+				:background="background"
 					style="width: 100%; height: 100%;"
 					:animation="false"
 					:tooltipShow="false"
-					:ontouch="false"
+					:ontouch="ontouch"
 				/>
 		</view>
 	</view>
@@ -96,6 +96,14 @@ export default {
 		align: {
 			type: String,
 			default: 'center'
+		},
+		background: {
+			type: String,
+			default: '#FFFFFF'
+		},
+		ontouch: {
+			type: Boolean,
+			default: false
 		}
 	},
 	data() {

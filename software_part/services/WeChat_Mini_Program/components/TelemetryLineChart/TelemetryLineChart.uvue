@@ -8,25 +8,28 @@
 			</view>
 		</view>
 		<view v-if="hasData" class="chart-wrap">
-			<ec-canvas
-				id="ecCanvas"
-				:canvas-id="canvasId"
-				:ec="ec"
-				@init="onEcCanvasInit"
-				:force-use-old-canvas="forceUseOldCanvas"
-				class="ec-host"
+			<mrsong-charts
+				type="line"
+				title=""
+				:chartsData="chartsData"
+				:options="chartOptions"
+				:config="chartConfig"
+				:ontouch="interactive"
 			/>
 		</view>
-		<view v-else class="empty">
+		<view v-if="showLegend" class="legend">
+			<view v-for="item in legendItems" :key="item.name" class="legend-item">
+				<view class="legend-dot" :style="{ backgroundColor: item.color }"></view>
+				<text class="legend-text">{{ item.name }}</text>
+			</view>
+		</view>
+		<view v-if="!hasData" class="empty">
 			<text class="empty-text">暂无数据</text>
 		</view>
 	</view>
-	</template>
+</template>
 
 <script setup lang="uts">
-	// WeChat mini program ECharts adapter (echarts-for-weixin)
-	import * as echarts from '../../wxcomponents/ec-canvas/echarts'
-
 	const props = defineProps({
 		title: { type: String, default: '数据趋势' },
 		// TelemetryRecord[]: { deviceId, timestamp, temperature, humidity, ... }
@@ -77,70 +80,12 @@
 		return bestVal === null ? null : bestVal.toFixed(2)
 	})
 
-	const forceUseOldCanvas = computed(() => props.forceUseOldCanvas)
-
-	let chart : any = null
-	// Keep logs off by default; devtools console spam can quickly blow up memory when polling.
-	const DEBUG_CHART = false
-	const MAX_POINTS_PER_SERIES = 500
-
-	function median(values : number[]) : number | null {
-		if (!values.length) return null
-		const sorted = values.slice().sort((a : number, b : number) => a - b)
-		const mid = Math.floor(sorted.length / 2)
-		return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
-	}
-
-	function computeGapBreakMs(sortedTimestamps : number[]) : number {
-		const diffs : number[] = []
-		for (let i = 1; i < sortedTimestamps.length; i++) {
-			const diff = sortedTimestamps[i] - sortedTimestamps[i - 1]
-			if (diff > 0 && diff <= 5 * 60 * 1000) diffs.push(diff)
-		}
-		const typical = median(diffs)
-		return Math.max((typical ?? 5000) * 4, 20 * 1000)
-	}
-
-	function insertGapBreaks(data : any[]) : any[] {
-		if (!data || data.length < 2) return data || []
-		const timestamps = data.map((p : any) => Number(p?.[0] || 0))
-		const gapBreakMs = computeGapBreakMs(timestamps)
-		const result : any[] = []
-		let prevTs : number | null = null
-		for (const [ts, value] of data as any) {
-			if (prevTs != null && ts - prevTs > gapBreakMs) {
-				result.push([prevTs + 1, null])
-			}
-			result.push([ts, value])
-			prevTs = ts
-		}
-		return result
-	}
-
-	function sampleData(data : any[], maxPoints : number = MAX_POINTS_PER_SERIES) : any[] {
-		if (!data || !data.length) return []
-		let validCount = 0
-		for (const p of data as any) {
-			const v = p?.[1]
-			if (v !== null && v !== undefined) validCount++
-		}
-		if (validCount <= maxPoints) return data
-		const step = Math.ceil(validCount / maxPoints)
-		let validIndex = 0
-		const lastValidIndex = validCount - 1
-		const out : any[] = []
-		for (const p of data as any) {
-			const v = p?.[1]
-			if (v === null || v === undefined) {
-				out.push(p)
-				continue
-			}
-			const keep = validIndex === 0 || validIndex === lastValidIndex || validIndex % step === 0
-			validIndex++
-			if (keep) out.push(p)
-		}
-		return out
-	}
+	const MAX_BUCKETS = 120
+	const palette = computed(() => {
+		return props.field === 'humidity'
+			? ['#00a86b', '#24bf7a', '#55cf94', '#7ee0ae', '#1b8f64', '#4bbf9b']
+			: ['#ff8a3d', '#ff6b2c', '#ffb24d', '#ff9f68', '#ff7f50', '#f97316']
+	})
 
 	function formatHHmm(ts : number) : string {
 		const d = new Date(ts)
@@ -149,49 +94,32 @@
 		return `${hh}:${mm}`
 	}
 
-	function parseTimeValue(value : any) : number {
-		if (typeof value === 'number') return value
-		if (typeof value === 'string') {
-			const asNumber = Number(value)
-			if (Number.isFinite(asNumber)) return asNumber
-			return new Date(value).getTime()
-		}
-		return NaN
+	function formatMMDDHHmm(ts : number) : string {
+		const d = new Date(ts)
+		const mm = String(d.getMonth() + 1).padStart(2, '0')
+		const dd = String(d.getDate()).padStart(2, '0')
+		const hh = String(d.getHours()).padStart(2, '0')
+		const min = String(d.getMinutes()).padStart(2, '0')
+		return `${mm}-${dd} ${hh}:${min}`
 	}
 
-	function timeAxisLabelFormatter(value : any) : string {
-		const ts = parseTimeValue(value)
-		if (!Number.isFinite(ts)) return ''
-		return formatHHmm(ts)
+	function formatHHmmss(ts : number) : string {
+		const d = new Date(ts)
+		const hh = String(d.getHours()).padStart(2, '0')
+		const mm = String(d.getMinutes()).padStart(2, '0')
+		const ss = String(d.getSeconds()).padStart(2, '0')
+		return `${hh}:${mm}:${ss}`
 	}
 
-	function getTimeAxisTicks() : any {
-		const min : any = (props as any).xAxisMin
-		const max : any = (props as any).xAxisMax
-		const minNumber = typeof min === 'number' ? min : null
-		const maxNumber = typeof max === 'number' ? max : null
-		if (minNumber == null || maxNumber == null) return { min, max }
-
-		const range = Math.max(maxNumber - minNumber, 0)
-		if (range > 0 && range <= 15 * 60 * 1000) {
-			const minute = 60000
-			const stepMs = Math.max(Math.round((range / 5) / minute) * minute, minute)
-			return {
-				min: Math.floor(minNumber / minute) * minute,
-				max: maxNumber,
-				splitNumber: 5,
-				interval: stepMs,
-				minInterval: stepMs,
-				maxInterval: stepMs,
-			}
-		}
-		return { min, max }
+	function formatLabel(ts : number, rangeMs : number) : string {
+		if (rangeMs <= 30 * 60 * 1000) return formatHHmmss(ts)
+		if (rangeMs <= 24 * 60 * 60 * 1000) return formatHHmm(ts)
+		return formatMMDDHHmm(ts)
 	}
 
-	const deviceSeries = computed(() => {
+	const normalizedPoints = computed(() => {
 		const arr : any[] = (props.data as any[]) || []
-		const map : any = {}
-
+		const out : any[] = []
 		for (const point of arr) {
 			const deviceId = String((point as any)?.deviceId ?? '')
 			if (!deviceId) continue
@@ -200,191 +128,155 @@
 			const raw = (point as any)?.[props.field]
 			const v = typeof raw === 'number' ? raw : Number(raw)
 			if (!Number.isFinite(v)) continue
-			if (!map[deviceId]) map[deviceId] = []
-			map[deviceId].push([ts, v])
+			out.push({
+				deviceId,
+				timestamp: ts,
+				value: v,
+			})
 		}
-
-		const keys = Object.keys(map).sort()
-		return keys.map((deviceId : string) => {
-			const data : any[] = (map[deviceId] as any[]).sort((a : any, b : any) => (a?.[0] || 0) - (b?.[0] || 0))
-			const withGaps = insertGapBreaks(data)
-			return {
-				name: deviceId,
-				data: sampleData(withGaps, MAX_POINTS_PER_SERIES),
-			}
-		})
+		return out.sort((a : any, b : any) => (a?.timestamp || 0) - (b?.timestamp || 0))
 	})
 
-	function buildOption() : any {
-		const axisColor = '#e5e7eb'
-		const labelColor = '#6b7280'
-		const timeAxisTicks = getTimeAxisTicks()
-
-		const series = (deviceSeries.value as any[]).map((s : any) => ({
-			name: s.name,
-			type: 'line',
-			showSymbol: false,
-			smooth: true,
-			connectNulls: false,
-			data: s.data,
-		}))
-
-		const showLegend = (series as any[]).length > 1
-
-		return {
-			animation: true,
-			animationDuration: 0,
-			animationDurationUpdate: 300,
-			animationEasingUpdate: 'linear',
-			grid: {
-				top: 8,
-				left: 40,
-				right: 12,
-				bottom: showLegend ? 54 : 28,
-			},
-			// Keep tooltip enabled in both live & history modes.
-			// History mode additionally enables dataZoom (see `dataZoom` below).
-			tooltip: {
-				trigger: 'axis',
-				axisPointer: { type: 'cross' },
-			},
-			legend: showLegend
-				? {
-					show: true,
-					bottom: 6,
-					icon: 'circle',
-					itemWidth: 10,
-					itemHeight: 10,
-					textStyle: { fontSize: 11, color: labelColor },
-					type: 'scroll',
-				}
-				: { show: false },
-			xAxis: {
-				type: 'time',
-				...timeAxisTicks,
-				axisLine: { lineStyle: { color: axisColor } },
-				axisLabel: {
-					color: labelColor,
-					formatter: timeAxisLabelFormatter,
-					hideOverlap: true,
-					showMinLabel: true,
-					showMaxLabel: true,
-				},
-				splitLine: { show: true, lineStyle: { color: axisColor, opacity: 0.4 } },
-			},
-			yAxis: {
-				type: 'value',
-				axisLine: { lineStyle: { color: axisColor } },
-				axisLabel: { color: labelColor },
-				splitLine: { show: true, lineStyle: { color: axisColor, opacity: 0.35 } },
-			},
-			dataZoom: (props as any).interactive ? [{ type: 'inside', start: 0, end: 100 }] : [],
-			series,
+	const chartModel = computed(() => {
+		const points : any[] = (normalizedPoints.value as any[]) || []
+		if (!points.length) {
+			return {
+				categories: [],
+				series: [],
+				legendItems: [],
+				enableScroll: false,
+			}
 		}
-	}
 
-	function initChart(canvas : any, width : number, height : number, dpr : number) : any {
-		if (DEBUG_CHART) {
-			console.log('[TelemetryLineChart] initChart', {
-				title: props.title,
-				field: props.field,
-				canvasId: props.canvasId,
-				points: (props.data as any[])?.length || 0,
-				width,
-				height,
-				dpr
+		const grouped : any = {}
+		let dataMin = 0
+		let dataMax = 0
+		for (let i = 0; i < points.length; i++) {
+			const point : any = points[i]
+			const ts = Number(point?.timestamp || 0)
+			if (i === 0 || ts < dataMin) dataMin = ts
+			if (i === 0 || ts > dataMax) dataMax = ts
+			const deviceId = String(point?.deviceId || '')
+			if (!grouped[deviceId]) grouped[deviceId] = []
+			grouped[deviceId].push(point)
+		}
+
+		const minProp = typeof props.xAxisMin === 'number' ? Number(props.xAxisMin) : NaN
+		const maxProp = typeof props.xAxisMax === 'number' ? Number(props.xAxisMax) : NaN
+		const effectiveMin = Number.isFinite(minProp) ? Math.min(minProp, dataMin) : dataMin
+		const effectiveMax = Number.isFinite(maxProp) ? Math.max(maxProp, dataMax) : dataMax
+		const rangeMs = Math.max(effectiveMax - effectiveMin, 0)
+		const bucketCount = Math.max(2, Math.min(MAX_BUCKETS, points.length))
+		const bucketMs = rangeMs > 0 ? Math.max(Math.ceil(rangeMs / Math.max(bucketCount - 1, 1)), 1000) : 1000
+		const bucketTimestamps : number[] = []
+		for (let i = 0; i < bucketCount; i++) {
+			bucketTimestamps.push(effectiveMin + i * bucketMs)
+		}
+		if (bucketTimestamps.length && bucketTimestamps[bucketTimestamps.length - 1] < effectiveMax) {
+			bucketTimestamps.push(effectiveMax)
+		}
+
+		const keys = Object.keys(grouped).sort()
+		const legendItems : any[] = []
+		const series : any[] = []
+		for (let i = 0; i < keys.length; i++) {
+			const deviceId = keys[i]
+			const color = palette.value[i % palette.value.length]
+			const values : any[] = []
+			for (let j = 0; j < bucketTimestamps.length; j++) values.push(null)
+
+			const items : any[] = (grouped[deviceId] as any[]) || []
+			for (const item of items) {
+				const ts = Number((item as any)?.timestamp || 0)
+				let index = 0
+				if (bucketTimestamps.length > 1) {
+					index = Math.round((ts - effectiveMin) / bucketMs)
+				}
+				if (index < 0) index = 0
+				if (index >= bucketTimestamps.length) index = bucketTimestamps.length - 1
+				values[index] = Number((item as any)?.value)
+			}
+
+			legendItems.push({ name: deviceId, color })
+			series.push({
+				name: deviceId,
+				data: values,
 			})
 		}
 
-		// Uni-App X / UTS 的模块互操作有时会把 CommonJS 默认导出挂到 default 上；
-		// 这里做一次兼容处理，避免出现 "(void 0) is not a function"。
-		const ns : any = echarts as any
-		let e : any = null
-		if (ns && typeof ns.init === 'function') e = ns
-		else if (ns && ns.default && typeof ns.default.init === 'function') e = ns.default
-		else {
-			// fallback: UMD may attach to globalThis
-			try {
-				const g : any = globalThis as any
-				if (g && g.echarts && typeof g.echarts.init === 'function') e = g.echarts
-			} catch (err) {}
+		const categories = bucketTimestamps.map((ts : number) => formatLabel(ts, rangeMs))
+		return {
+			categories,
+			series,
+			legendItems,
+			enableScroll: Boolean(props.interactive || categories.length > 8),
 		}
-
-		if (!e || typeof e.init !== 'function') {
-			console.error('[TelemetryLineChart] echarts.init not found', ns)
-			return null
-		}
-
-		chart = e.init(canvas, null, {
-			width,
-			height,
-			devicePixelRatio: dpr,
-		})
-		if (canvas && typeof canvas.setChart === 'function') {
-			canvas.setChart(chart)
-		}
-		chart.setOption(buildOption(), true)
-		return chart
-	}
-
-	// uni-app X/WeChat 原生组件在 props 传递时可能会丢失函数（ec.onInit），
-	// 此时 ec-canvas 会触发 init 事件而不是调用 onInit；这里做兜底处理。
-	function onEcCanvasInit(e : any) {
-		const detail : any = (e as any)?.detail ?? e ?? {}
-		const canvas = detail?.canvas
-		const width = Number(detail?.width ?? 0)
-		const height = Number(detail?.height ?? 0)
-		// old canvas: canvasDpr; new canvas: dpr
-		const dpr = Number(detail?.dpr ?? detail?.canvasDpr ?? 1)
-		initChart(canvas, width, height, dpr)
-	}
-
-	const ec = computed(() => ({
-		onInit: initChart,
-		// Touch is required for tooltip on WeChat mini program.
-		// Keep it enabled in live mode too (only dataZoom is gated by `interactive`).
-		disableTouch: false,
-	}))
-
-	function renderChart() {
-		if (!chart) return
-		chart.setOption(buildOption(), true)
-	}
-
-	function updateAxisRange() {
-		if (!chart) return
-		chart.setOption({ xAxis: getTimeAxisTicks() }, false)
-	}
-
-	watch(
-		// Backend returns range query sorted DESC by reportedAt, so the newest point is at index 0.
-		() => [(props.data as any[])?.length || 0, (props.data as any[])[0]?.timestamp],
-		() => {
-			renderChart()
-		},
-	)
-
-	watch(
-		() => [(props as any).xAxisMin, (props as any).xAxisMax],
-		() => {
-			updateAxisRange()
-		},
-	)
-
-	watch(
-		() => (props as any).interactive,
-		() => {
-			// interactive mode affects dataZoom + touch handlers
-			renderChart()
-		},
-	)
-
-	onUnmounted(() => {
-		try {
-			if (chart) chart.dispose()
-		} catch (e) {}
-		chart = null
 	})
+
+	const chartsData = computed(() => {
+		return {
+			categories: (chartModel.value as any)?.categories || [],
+			series: (chartModel.value as any)?.series || [],
+		}
+	})
+
+	const chartConfig = computed(() => {
+		const count = ((chartModel.value as any)?.categories || []).length
+		const visibleCount = props.interactive ? 8 : Math.min(Math.max(count, 4), 6)
+		return {
+			enableScroll: Boolean((chartModel.value as any)?.enableScroll),
+			scrollShow: Boolean((chartModel.value as any)?.enableScroll),
+			scrollAlign: 'left',
+			itemCount: visibleCount,
+			rotateLabel: count > 6,
+			color: palette.value,
+		}
+	})
+
+	const chartOptions = computed(() => {
+		return {
+			color: palette.value,
+			animation: false,
+			dataLabel: false,
+			dataPointShape: false,
+			enableScroll: Boolean((chartModel.value as any)?.enableScroll),
+			xAxis: {
+				rotateLabel: ((chartModel.value as any)?.categories || []).length > 6,
+				itemCount: props.interactive ? 8 : 6,
+				scrollShow: Boolean((chartModel.value as any)?.enableScroll),
+				scrollAlign: 'left',
+				fontSize: 10,
+				margin: 8,
+			},
+			yAxis: {
+				data: [{
+					type: 'value',
+					unit: unit.value,
+					fontSize: 11,
+					tofix: 2,
+				}],
+			},
+			legend: {
+				show: false,
+			},
+			extra: {
+				line: {
+					type: 'curve',
+					width: 2,
+				},
+			},
+		}
+	})
+
+	const legendItems = computed(() => (chartModel.value as any)?.legendItems || [])
+	const showLegend = computed(() => ((legendItems.value as any[]) || []).length > 1)
+
+	watch(
+		() => [(props.data as any[])?.length || 0, (props.data as any[])[0]?.timestamp, props.interactive],
+		() => {
+			// mrsong-charts watches props deeply; no imperative refresh is needed.
+		},
+	)
 </script>
 
 <style lang="scss">
@@ -433,14 +325,35 @@
 	.chart-wrap {
 		width: 100%;
 		height: 240px;
-		/* For old canvas mode, avoid clipping issues with native component layers. */
 		overflow: visible;
 	}
 
-	.ec-host {
+	.legend {
 		width: 100%;
-		height: 100%;
-		overflow: visible;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 10px;
+		padding-top: 4px;
+	}
+
+	.legend-item {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.legend-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 999px;
+		flex-shrink: 0;
+	}
+
+	.legend-text {
+		font-size: 11px;
+		color: var(--w-text-secondary);
 	}
 
 	.empty {

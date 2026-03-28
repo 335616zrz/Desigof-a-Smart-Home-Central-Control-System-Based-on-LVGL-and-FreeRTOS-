@@ -83,6 +83,7 @@
 					<u-button type="primary" @click="goDevice(); quickOpen = false">设备管理</u-button>
 					<u-button @click="goAlert(); quickOpen = false">查看告警</u-button>
 					<u-button @click="goTelemetry(); quickOpen = false">查看遥测</u-button>
+					<u-button @click="goTelemetryDetail(); quickOpen = false">详细趋势</u-button>
 					<u-button @click="goRule(); quickOpen = false">告警规则</u-button>
 					<u-button @click="goMusic(); quickOpen = false">音乐</u-button>
 					<u-button @click="goProfile(); quickOpen = false">我的</u-button>
@@ -337,6 +338,10 @@
 
 	function goTelemetry() {
 		uni.navigateTo({ url: '/pages/telemetry/history/history' })
+	}
+
+	function goTelemetryDetail() {
+		uni.navigateTo({ url: '/pages/telemetry/detail/detail' })
 	}
 
 	function goRule() {
