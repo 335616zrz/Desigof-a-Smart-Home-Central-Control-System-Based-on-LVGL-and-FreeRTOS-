@@ -85,7 +85,7 @@ void setup_scr_author_screen(lv_ui *ui)
     ui->screen_5_label_1 = lv_label_create(ui->screen_5);
     lv_obj_set_pos(ui->screen_5_label_1, 40, 30);
     lv_obj_set_size(ui->screen_5_label_1, 430, 30);
-    lv_label_set_text(ui->screen_5_label_1, "吕梁学院 物理与电子信息工程系");
+    lv_label_set_text(ui->screen_5_label_1, "智能家居中控系统");
     lv_label_set_long_mode(ui->screen_5_label_1, LV_LABEL_LONG_WRAP);
 
     //Write style for screen_5_label_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -154,7 +154,7 @@ void setup_scr_author_screen(lv_ui *ui)
     ui->screen_5_label_4 = lv_label_create(ui->screen_5);
     lv_obj_set_pos(ui->screen_5_label_4, 40, 90);
     lv_obj_set_size(ui->screen_5_label_4, 430, 30);
-    lv_label_set_text(ui->screen_5_label_4, "电子信息工程 2204班");
+    lv_label_set_text(ui->screen_5_label_4, "基于 LVGL 与 FreeRTOS");
     lv_label_set_long_mode(ui->screen_5_label_4, LV_LABEL_LONG_WRAP);
 
     //Write style for screen_5_label_4, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -177,7 +177,7 @@ void setup_scr_author_screen(lv_ui *ui)
     ui->screen_5_label_5 = lv_label_create(ui->screen_5);
     lv_obj_set_pos(ui->screen_5_label_5, 40, 120);
     lv_obj_set_size(ui->screen_5_label_5, 430, 30);
-    lv_label_set_text(ui->screen_5_label_5, "张瑞钊");
+    lv_label_set_text(ui->screen_5_label_5, "开源作者：335616zrz");
     lv_label_set_long_mode(ui->screen_5_label_5, LV_LABEL_LONG_WRAP);
 
     //Write style for screen_5_label_5, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -200,7 +200,7 @@ void setup_scr_author_screen(lv_ui *ui)
     ui->screen_5_label_6 = lv_label_create(ui->screen_5);
     lv_obj_set_pos(ui->screen_5_label_6, 40, 150);
     lv_obj_set_size(ui->screen_5_label_6, 430, 30);
-    lv_label_set_text(ui->screen_5_label_6, "指导老师：张辰锐");
+    lv_label_set_text(ui->screen_5_label_6, "项目托管：GitHub");
     lv_label_set_long_mode(ui->screen_5_label_6, LV_LABEL_LONG_WRAP);
 
     //Write style for screen_5_label_6, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
@@ -221,16 +221,16 @@ void setup_scr_author_screen(lv_ui *ui)
 
     //Write codes screen_5_label_7
     ui->screen_5_label_7 = lv_label_create(ui->screen_5);
-    lv_obj_set_pos(ui->screen_5_label_7, 30, 270);
-    lv_obj_set_size(ui->screen_5_label_7, 430, 30);
-    lv_label_set_text(ui->screen_5_label_7, "个人开源：https://github.com/");
+    lv_obj_set_pos(ui->screen_5_label_7, 12, 240);
+    lv_obj_set_size(ui->screen_5_label_7, 456, 76);
+    lv_label_set_text(ui->screen_5_label_7, "开源仓库：\nhttps://github.com/335616zrz/\nDesigof-a-Smart-Home-Central-Control-System-\nBased-on-LVGL-and-FreeRTOS-.git");
     lv_label_set_long_mode(ui->screen_5_label_7, LV_LABEL_LONG_WRAP);
 
     //Write style for screen_5_label_7, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_5_label_7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_radius(ui->screen_5_label_7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_5_label_7, lv_color_hex(0xffa9b6), LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_5_label_7, &lv_font_SourceHanSerifSC_Regular_25, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_5_label_7, &lv_font_SourceHanSerifSC_Regular_16, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui->screen_5_label_7, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_5_label_7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_5_label_7, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -246,7 +246,7 @@ void setup_scr_author_screen(lv_ui *ui)
     ui->screen_5_label_8 = lv_label_create(ui->screen_5);
     lv_obj_set_pos(ui->screen_5_label_8, 40, 210);
     lv_obj_set_size(ui->screen_5_label_8, 430, 30);
-    lv_label_set_text(ui->screen_5_label_8, "开发库：Free RTOS+LVGL");
+    lv_label_set_text(ui->screen_5_label_8, "开发库：FreeRTOS+LVGL");
     lv_label_set_long_mode(ui->screen_5_label_8, LV_LABEL_LONG_WRAP);
 
     //Write style for screen_5_label_8, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
